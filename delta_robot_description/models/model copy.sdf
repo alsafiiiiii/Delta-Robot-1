@@ -5,7 +5,6 @@
         <self_collide>false</self_collide>
 
         <link name="world_link" />
-
         <link name="base_link">
             <self_collide>false</self_collide>
             <pose>0.0 0.0 -0.059453642384105956 0.0 -0.0 0.0</pose>
@@ -37,13 +36,13 @@
                     </mesh>
                 </geometry>
                 <material>
-                    <ambient>0.2 0.2 0.2 1</ambient>
-                    <diffuse>0.2 0.2 0.2 1</diffuse>
-                    <specular>0.5 0.5 0.5 1</specular>
+                    <ambient>0.5 0.5 0.5 1</ambient>
+                    <diffuse>0.7 0.7 0.7 1</diffuse>
+                    <specular>0.9 0.9 0.9 1</specular>
+                    <emissive>0 0 0 1</emissive>
                 </material>
             </visual>
         </link>
-
         <link name="base_hex">
             <kinematic>false</kinematic>
             <self_collide>false</self_collide>
@@ -60,6 +59,14 @@
                     <izz>0.00507804487380368</izz>
                 </inertia>
             </inertial>
+            <!-- <collision name="base_collision">
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes/base.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </collision>-->
             <visual name="base_visual">
                 <geometry>
                     <mesh>
@@ -68,13 +75,13 @@
                     </mesh>
                 </geometry>
                 <material>
-                    <ambient>0.2 0.2 0.2 1</ambient>
-                    <diffuse>0.2 0.2 0.2 1</diffuse>
-                    <specular>0.5 0.5 0.5 1</specular>
+                    <ambient>0.5 0.5 0.5 1</ambient>
+                    <diffuse>0.7 0.7 0.7 1</diffuse>
+                    <specular>0.9 0.9 0.9 1</specular>
+                    <emissive>0 0 0 1</emissive>
                 </material>
             </visual>
         </link>
-
         <link name="forearm1">
             <self_collide>false</self_collide>
             <pose>0.11772320752425844 0.0007149855107056781 1.5439608758046345e-17 0.0 -0.0 0.0</pose>
@@ -90,6 +97,14 @@
                     <izz>0.00032753770757601333</izz>
                 </inertia>
             </inertial>
+            <!-- <collision name="forearm1_collision">
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes/forearm1.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </collision> -->
             <visual name="forearm1_visual">
                 <geometry>
                     <mesh>
@@ -98,13 +113,13 @@
                     </mesh>
                 </geometry>
                 <material>
-                    <ambient>0.0 0.3 0.7 1</ambient>
-                    <diffuse>0.0 0.3 0.7 1</diffuse>
-                    <specular>0.8 0.8 0.8 1</specular>
+                    <ambient>0.1 0.4 0.8 1</ambient>
+                    <diffuse>0.2 0.5 0.9 1</diffuse>
+                    <specular>0.3 0.3 0.3 1</specular>
+                    <emissive>0 0 0 1</emissive>
                 </material>
             </visual>
         </link>
-
         <link name="forearm2">
             <self_collide>false</self_collide>
             <pose>-0.059480799377179414 0.10159379557511 -1.9009703275436022e-17 0.0 -0.0 0.0</pose>
@@ -120,6 +135,14 @@
                     <izz>0.000327537707552888</izz>
                 </inertia>
             </inertial>
+            <!-- <collision name="forearm2_collision">
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes/forearm2.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </collision> -->
             <visual name="forearm2_visual">
                 <geometry>
                     <mesh>
@@ -128,13 +151,13 @@
                     </mesh>
                 </geometry>
                 <material>
-                    <ambient>0.0 0.3 0.7 1</ambient>
-                    <diffuse>0.0 0.3 0.7 1</diffuse>
-                    <specular>0.8 0.8 0.8 1</specular>
+                    <ambient>0.1 0.4 0.8 1</ambient>
+                    <diffuse>0.2 0.5 0.9 1</diffuse>
+                    <specular>0.3 0.3 0.3 1</specular>
+                    <emissive>0 0 0 1</emissive>
                 </material>
             </visual>
         </link>
-
         <link name="forearm3">
             <self_collide>false</self_collide>
             <pose>-0.0582424081462861 -0.10230878108593441 8.653069086992532e-17 0.0 -0.0 0.0</pose>
@@ -150,6 +173,15 @@
                     <izz>0.00032753770756010993</izz>
                 </inertia>
             </inertial>
+
+            <!-- <collision name="forearm3_collision">
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes/forearm3.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </collision>-->
             <visual name="forearm3_visual">
                 <geometry>
                     <mesh>
@@ -158,13 +190,13 @@
                     </mesh>
                 </geometry>
                 <material>
-                    <ambient>0.0 0.3 0.7 1</ambient>
-                    <diffuse>0.0 0.3 0.7 1</diffuse>
-                    <specular>0.8 0.8 0.8 1</specular>
+                    <ambient>0.1 0.4 0.8 1</ambient>
+                    <diffuse>0.2 0.5 0.9 1</diffuse>
+                    <specular>0.3 0.3 0.3 1</specular>
+                    <emissive>0 0 0 1</emissive>
                 </material>
             </visual>
         </link>
-
         <link name="arm1">
             <self_collide>false</self_collide>
             <pose>0.09306608290937096 -0.02514249973779386 -0.11855347169928132 0.0 -0.0 0.0</pose>
@@ -180,6 +212,14 @@
                     <izz>0.00015756561652582377</izz>
                 </inertia>
             </inertial>
+            <!-- <collision name="arm1_collision">
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes/arm1.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </collision> -->
             <visual name="arm1_visual">
                 <geometry>
                     <mesh>
@@ -188,13 +228,13 @@
                     </mesh>
                 </geometry>
                 <material>
-                    <ambient>0.8 0.8 0.8 1</ambient>
-                    <diffuse>0.8 0.8 0.8 1</diffuse>
-                    <specular>0.5 0.5 0.5 1</specular>
+                    <ambient>0.3 0.3 0.35 1</ambient>
+                    <diffuse>0.5 0.5 0.55 1</diffuse>
+                    <specular>0.8 0.8 0.9 1</specular>
+                    <emissive>0 0 0 1</emissive>
                 </material>
             </visual>
         </link>
-
         <link name="arm2">
             <self_collide>false</self_collide>
             <pose>0.09306608292771458 0.025857500790082453 -0.11855347175235156 0.0 -0.0 0.0</pose>
@@ -210,6 +250,14 @@
                     <izz>0.00015756561749766327</izz>
                 </inertia>
             </inertial>
+            <!-- <collision name="arm2_collision">
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes/arm2.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </collision> -->
             <visual name="arm2_visual">
                 <geometry>
                     <mesh>
@@ -218,13 +266,13 @@
                     </mesh>
                 </geometry>
                 <material>
-                    <ambient>0.8 0.8 0.8 1</ambient>
-                    <diffuse>0.8 0.8 0.8 1</diffuse>
-                    <specular>0.5 0.5 0.5 1</specular>
+                    <ambient>0.3 0.3 0.35 1</ambient>
+                    <diffuse>0.5 0.5 0.55 1</diffuse>
+                    <specular>0.8 0.8 0.9 1</specular>
+                    <emissive>0 0 0 1</emissive>
                 </material>
             </visual>
         </link>
-
         <link name="arm3">
             <self_collide>false</self_collide>
             <pose>-0.02475899754869274 0.09316884207862412 -0.11855347165805107 0.0 -0.0 0.0</pose>
@@ -240,6 +288,14 @@
                     <izz>0.00015756561739719226</izz>
                 </inertia>
             </inertial>
+            <!-- <collision name="arm3_collision">
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes/arm3.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </collision> -->
             <visual name="arm3_visual">
                 <geometry>
                     <mesh>
@@ -248,13 +304,13 @@
                     </mesh>
                 </geometry>
                 <material>
-                    <ambient>0.8 0.8 0.8 1</ambient>
-                    <diffuse>0.8 0.8 0.8 1</diffuse>
-                    <specular>0.5 0.5 0.5 1</specular>
+                    <ambient>0.3 0.3 0.35 1</ambient>
+                    <diffuse>0.5 0.5 0.55 1</diffuse>
+                    <specular>0.8 0.8 0.9 1</specular>
+                    <emissive>0 0 0 1</emissive>
                 </material>
             </visual>
         </link>
-
         <link name="arm4">
             <self_collide>false</self_collide>
             <pose>-0.06892629366575652 0.067668841543132 -0.11855347162272901 0.0 -0.0 0.0</pose>
@@ -270,6 +326,14 @@
                     <izz>0.00015756561901733725</izz>
                 </inertia>
             </inertial>
+            <!-- <collision name="arm4_collision">
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes/arm4.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </collision> -->
             <visual name="arm4_visual">
                 <geometry>
                     <mesh>
@@ -278,13 +342,13 @@
                     </mesh>
                 </geometry>
                 <material>
-                    <ambient>0.8 0.8 0.8 1</ambient>
-                    <diffuse>0.8 0.8 0.8 1</diffuse>
-                    <specular>0.5 0.5 0.5 1</specular>
+                    <ambient>0.3 0.3 0.35 1</ambient>
+                    <diffuse>0.5 0.5 0.55 1</diffuse>
+                    <specular>0.8 0.8 0.9 1</specular>
+                    <emissive>0 0 0 1</emissive>
                 </material>
             </visual>
         </link>
-
         <link name="arm5">
             <self_collide>false</self_collide>
             <pose>-0.06830708522897451 -0.06802634201548975 -0.11855347170608552 0.0 -0.0 0.0</pose>
@@ -300,6 +364,14 @@
                     <izz>0.00015756561726048722</izz>
                 </inertia>
             </inertial>
+            <!-- <collision name="arm5_collision">
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes/arm5.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </collision> -->
             <visual name="arm5_visual">
                 <geometry>
                     <mesh>
@@ -308,13 +380,13 @@
                     </mesh>
                 </geometry>
                 <material>
-                    <ambient>0.8 0.8 0.8 1</ambient>
-                    <diffuse>0.8 0.8 0.8 1</diffuse>
-                    <specular>0.5 0.5 0.5 1</specular>
+                    <ambient>0.3 0.3 0.35 1</ambient>
+                    <diffuse>0.5 0.5 0.55 1</diffuse>
+                    <specular>0.8 0.8 0.9 1</specular>
+                    <emissive>0 0 0 1</emissive>
                 </material>
             </visual>
         </link>
-
         <link name="arm6">
             <self_collide>false</self_collide>
             <pose>-0.02413978876217573 -0.09352634241561714 -0.11855347175791864 0.0 -0.0 0.0</pose>
@@ -330,6 +402,14 @@
                     <izz>0.00015756561862866143</izz>
                 </inertia>
             </inertial>
+            <!-- <collision name="arm6_collision">
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes/arm6.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </collision> -->
             <visual name="arm6_visual">
                 <geometry>
                     <mesh>
@@ -338,13 +418,13 @@
                     </mesh>
                 </geometry>
                 <material>
-                    <ambient>0.8 0.8 0.8 1</ambient>
-                    <diffuse>0.8 0.8 0.8 1</diffuse>
-                    <specular>0.5 0.5 0.5 1</specular>
+                    <ambient>0.3 0.3 0.35 1</ambient>
+                    <diffuse>0.5 0.5 0.55 1</diffuse>
+                    <specular>0.8 0.8 0.9 1</specular>
+                    <emissive>0 0 0 1</emissive>
                 </material>
             </visual>
         </link>
-
         <link name="EEBase">
             <self_collide>false</self_collide>
             <pose>4.0438971337436165e-10 3.9178786714189516e-11 -0.2371069434554458 0.0 -0.0 0.0</pose>
@@ -360,6 +440,14 @@
                     <izz>0.000220801824329689</izz>
                 </inertia>
             </inertial>
+            <!-- <collision name="EEBase_collision">
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes/EEBase.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </collision> -->
             <visual name="EEBase_visual">
                 <geometry>
                     <mesh>
@@ -368,13 +456,13 @@
                     </mesh>
                 </geometry>
                 <material>
-                    <ambient>0.0 0.3 0.7 1</ambient>
-                    <diffuse>0.0 0.3 0.7 1</diffuse>
-                    <specular>0.8 0.8 0.8 1</specular>
+                    <ambient>0.8 0.3 0.1 1</ambient>
+                    <diffuse>0.9 0.4 0.2 1</diffuse>
+                    <specular>0.2 0.2 0.2 1</specular>
+                    <emissive>0 0 0 1</emissive>
                 </material>
             </visual>
         </link>
-
         <link name="Bevel1">
             <self_collide>false</self_collide>
             <pose>0.022598238942588337 0 -0.25555 0.0 -0.0 0.0</pose>
@@ -390,6 +478,14 @@
                     <izz>1.0090818180532715e-06</izz>
                 </inertia>
             </inertial>
+            <!-- <collision name="Bevel1_collision">
+				<geometry>
+					<mesh>
+						<uri>package://delta_robot_description/meshes/Bevel1.stl</uri>
+						<scale>0.001 0.001 0.001</scale>
+					</mesh>
+				</geometry>
+			</collision> -->
             <visual name="Bevel1_visual">
                 <geometry>
                     <mesh>
@@ -398,13 +494,13 @@
                     </mesh>
                 </geometry>
                 <material>
-                    <ambient>0.7 0.5 0.1 1</ambient>
-                    <diffuse>0.7 0.5 0.1 1</diffuse>
-                    <specular>0.9 0.9 0.9 1</specular>
+                    <ambient>0.3 0.3 0.35 1</ambient>
+                    <diffuse>0.5 0.5 0.55 1</diffuse>
+                    <specular>0.8 0.8 0.9 1</specular>
+                    <emissive>0 0 0 1</emissive>
                 </material>
             </visual>
         </link>
-
         <link name="Bevel2">
             <self_collide>false</self_collide>
             <pose>-0.022598396462524938 0 -0.25555 0.0 -0.0 0.0</pose>
@@ -420,6 +516,14 @@
                     <izz>1.0091285363646813e-06</izz>
                 </inertia>
             </inertial>
+            <!-- <collision name="Bevel2_collision">
+				<geometry>
+					<mesh>
+						<uri>package://delta_robot_description/meshes/Bevel2.stl</uri>
+						<scale>0.001 0.001 0.001</scale>
+					</mesh>
+				</geometry>
+			</collision> -->
             <visual name="Bevel2_visual">
                 <geometry>
                     <mesh>
@@ -428,13 +532,13 @@
                     </mesh>
                 </geometry>
                 <material>
-                    <ambient>0.7 0.5 0.1 1</ambient>
-                    <diffuse>0.7 0.5 0.1 1</diffuse>
-                    <specular>0.9 0.9 0.9 1</specular>
+                    <ambient>0.3 0.3 0.35 1</ambient>
+                    <diffuse>0.5 0.5 0.55 1</diffuse>
+                    <specular>0.8 0.8 0.9 1</specular>
+                    <emissive>0 0 0 1</emissive>
                 </material>
             </visual>
         </link>
-
         <link name="T">
             <self_collide>false</self_collide>
             <pose>0.0 0.0 -0.260598116 0.0 -0.0 0.0</pose>
@@ -450,6 +554,14 @@
                     <izz>1.260672827513e-06</izz>
                 </inertia>
             </inertial>
+            <!-- <collision name="T_collision">
+				<geometry>
+					<mesh>
+						<uri>package://delta_robot_description/meshes/T.stl</uri>
+						<scale>0.001 0.001 0.001</scale>
+					</mesh>
+				</geometry>
+			</collision> -->
             <visual name="T_visual">
                 <geometry>
                     <mesh>
@@ -457,14 +569,8 @@
                         <scale>0.001 0.001 0.001</scale>
                     </mesh>
                 </geometry>
-                <material>
-                    <ambient>0.7 0.7 0.7 1</ambient>
-                    <diffuse>0.7 0.7 0.7 1</diffuse>
-                    <specular>0.8 0.8 0.8 1</specular>
-                </material>
             </visual>
         </link>
-
         <link name="EE">
             <self_collide>false</self_collide>
             <pose>0.00011235145603943191 0.00018482718621420783 -0.270099331 0.0 -0.0 0.0</pose>
@@ -480,6 +586,14 @@
                     <izz>9.285799729941814e-06</izz>
                 </inertia>
             </inertial>
+            <!-- <collision name="EE_collision">
+				<geometry>
+					<mesh>
+						<uri>package://delta_robot_description/meshes/EE.stl</uri>
+						<scale>0.001 0.001 0.001</scale>
+					</mesh>
+				</geometry>
+			</collision> -->
             <visual name="EE_visual">
                 <geometry>
                     <mesh>
@@ -488,14 +602,15 @@
                     </mesh>
                 </geometry>
                 <material>
-                    <ambient>0.8 0.1 0.1 1</ambient>
-                    <diffuse>0.8 0.1 0.1 1</diffuse>
-                    <specular>0.5 0.5 0.5 1</specular>
+                    <ambient>0.3 0.3 0.35 1</ambient>
+                    <diffuse>0.5 0.5 0.55 1</diffuse>
+                    <specular>0.8 0.8 0.9 1</specular>
                     <emissive>0 0 0 1</emissive>
                 </material>
             </visual>
         </link>
 
+        <!-- Dummy links for ball joint connections -->
         <link name="dummy_arm1">
             <pose relative_to="EEBase">0.035310889540041704 -0.02549999943386602 0 0 0 0</pose>
             <inertial>
@@ -571,26 +686,27 @@
             <parent>world_link</parent>
             <child>base_link</child>
         </joint>
+        <!-- Original base joint -->
         <joint name="base_joint" type="fixed">
             <parent>base_link</parent>
             <child>base_hex</child>
             <pose>0 1.0 0 0 0 0</pose>
         </joint>
-
+        <!-- Revolute joints for the three actuated axes -->
         <joint name="jbf1" type="revolute">
             <parent>base_hex</parent>
             <child>forearm1</child>
             <pose>-0.041901939908467044 0.02578501478731749 7.87069767520482e-18 0 0 0</pose>
             <axis>
-                <xyz>0 1 0</xyz>
+                <xyz>0 1 0</xyz>                <!-- Simplified axis direction -->
                 <limit>
-                    <lower>-2.007</lower>
-                    <upper>2.007</upper>
-                    <effort>2.0</effort>
-                    <velocity>5.0</velocity>
+                    <lower>-2.007128639793479</lower>
+                    <upper>2.007128639793479</upper>
+                    <effort>2.0</effort>                    <!-- 20 kg·cm ≈ 2 N·m -->
+                    <velocity>5.0</velocity>                    <!-- Typical servo speed ~60°/0.1s = ~10 rad/s -->
                 </limit>
                 <dynamics>
-                    <damping>0.1</damping>
+                    <damping>0.1</damping>                    <!-- Reduce for servo-like response -->
                     <friction>0.05</friction>
                 </dynamics>
             </axis>
@@ -600,15 +716,15 @@
             <child>forearm2</child>
             <pose>-0.0013795078890995872 -0.049180651821708 2.848489941069142e-17 0 0 0</pose>
             <axis>
-                <xyz>-0.866025403784437 -0.5 0</xyz>
+                <xyz>-0.866025403784437 -0.5 0</xyz>                <!-- Simplified Z component -->
                 <limit>
-                    <lower>-2.007</lower>
-                    <upper>2.007</upper>
-                    <effort>2.0</effort>
-                    <velocity>5.0</velocity>
+                    <lower>-2.007128639793479</lower>
+                    <upper>2.007128639793479</upper>
+                    <effort>2.0</effort>                    <!-- 20 kg·cm ≈ 2 N·m -->
+                    <velocity>5.0</velocity>                    <!-- Typical servo speed ~60°/0.1s = ~10 rad/s -->
                 </limit>
                 <dynamics>
-                    <damping>0.1</damping>
+                    <damping>0.1</damping>                    <!-- Reduce for servo-like response -->
                     <friction>0.05</friction>
                 </dynamics>
             </axis>
@@ -618,20 +734,19 @@
             <child>forearm3</child>
             <pose>0.043281447796773696 0.02339563703450904 -7.464284794890084e-17 0 0 0</pose>
             <axis>
-                <xyz>0.866025403784438 -0.5 0</xyz>
+                <xyz>0.866025403784438 -0.5 0</xyz>                <!-- Simplified Z component -->
                 <limit>
-                    <lower>-2.007</lower>
-                    <upper>2.007</upper>
-                    <effort>2.0</effort>
-                    <velocity>5.0</velocity>
+                    <lower>-2.007128639793479</lower>
+                    <upper>2.007128639793479</upper>
+                    <effort>2.0</effort>                    <!-- 20 kg·cm ≈ 2 N·m -->
+                    <velocity>5.0</velocity>                    <!-- Typical servo speed ~60°/0.1s = ~10 rad/s -->
                 </limit>
                 <dynamics>
-                    <damping>0.1</damping>
+                    <damping>0.1</damping>                    <!-- Reduce for servo-like response -->
                     <friction>0.05</friction>
                 </dynamics>
             </axis>
         </joint>
-
         <joint name="ball1" type="ball">
             <parent>forearm1</parent>
             <child>arm1</child>
@@ -667,7 +782,48 @@
             <child>EEBase</child>
             <pose>-0.03973909207816269 -0.017830127656521706 9.203684925296329e-11 0 0 0</pose>
         </joint>
+        <plugin filename="libgz-sim-detachable-joint-system.so"
+            name="gz::sim::systems::DetachableJoint">
+            <parent_link>dummy_arm1</parent_link>
+            <child_model>delta_robot</child_model>
+            <child_link>arm1</child_link>
+            <detach_topic>/delta/detach_arm1</detach_topic>
+            <attach_topic>/delta/attach_arm1</attach_topic>
+        </plugin>
+        <plugin filename="libgz-sim-detachable-joint-system.so"
+            name="gz::sim::systems::DetachableJoint">
+            <parent_link>dummy_arm2</parent_link>
+            <child_model>delta_robot</child_model>
+            <child_link>arm2</child_link>
+            <detach_topic>/delta/detach_arm2</detach_topic>
+            <attach_topic>/delta/attach_arm2</attach_topic>
+        </plugin>
+        <plugin filename="libgz-sim-detachable-joint-system.so"
+            name="gz::sim::systems::DetachableJoint">
+            <parent_link>dummy_arm3</parent_link>
+            <child_model>delta_robot</child_model>
+            <child_link>arm3</child_link>
+            <detach_topic>/delta/detach_arm3</detach_topic>
+            <attach_topic>/delta/attach_arm3</attach_topic>
+        </plugin>
 
+        <plugin filename="libgz-sim-detachable-joint-system.so"
+            name="gz::sim::systems::DetachableJoint">
+            <parent_link>dummy_arm4</parent_link>
+            <child_model>delta_robot</child_model>
+            <child_link>arm4</child_link>
+            <detach_topic>/delta/detach_arm4</detach_topic>
+            <attach_topic>/delta/attach_arm4</attach_topic>
+        </plugin>
+
+        <plugin filename="libgz-sim-detachable-joint-system.so"
+            name="gz::sim::systems::DetachableJoint">
+            <parent_link>dummy_arm6</parent_link>
+            <child_model>delta_robot</child_model>
+            <child_link>arm6</child_link>
+            <detach_topic>/delta/detach_arm6</detach_topic>
+            <attach_topic>/delta/attach_arm6</attach_topic>
+        </plugin>
         <joint name="EEBase_to_dummy1" type="ball">
             <parent>EEBase</parent>
             <child>dummy_arm1</child>
@@ -688,7 +844,6 @@
             <parent>EEBase</parent>
             <child>dummy_arm6</child>
         </joint>
-
         <joint name="Bevelj1" type="revolute">
             <parent>EEBase</parent>
             <child>Bevel1</child>
@@ -761,47 +916,7 @@
             </axis>
         </joint>
 
-        <plugin filename="libgz-sim-detachable-joint-system.so"
-            name="gz::sim::systems::DetachableJoint">
-            <parent_link>dummy_arm1</parent_link>
-            <child_model>delta_robot</child_model>
-            <child_link>arm1</child_link>
-            <detach_topic>/delta/detach_arm1</detach_topic>
-            <attach_topic>/delta/attach_arm1</attach_topic>
-        </plugin>
-        <plugin filename="libgz-sim-detachable-joint-system.so"
-            name="gz::sim::systems::DetachableJoint">
-            <parent_link>dummy_arm2</parent_link>
-            <child_model>delta_robot</child_model>
-            <child_link>arm2</child_link>
-            <detach_topic>/delta/detach_arm2</detach_topic>
-            <attach_topic>/delta/attach_arm2</attach_topic>
-        </plugin>
-        <plugin filename="libgz-sim-detachable-joint-system.so"
-            name="gz::sim::systems::DetachableJoint">
-            <parent_link>dummy_arm3</parent_link>
-            <child_model>delta_robot</child_model>
-            <child_link>arm3</child_link>
-            <detach_topic>/delta/detach_arm3</detach_topic>
-            <attach_topic>/delta/attach_arm3</attach_topic>
-        </plugin>
-        <plugin filename="libgz-sim-detachable-joint-system.so"
-            name="gz::sim::systems::DetachableJoint">
-            <parent_link>dummy_arm4</parent_link>
-            <child_model>delta_robot</child_model>
-            <child_link>arm4</child_link>
-            <detach_topic>/delta/detach_arm4</detach_topic>
-            <attach_topic>/delta/attach_arm4</attach_topic>
-        </plugin>
-        <plugin filename="libgz-sim-detachable-joint-system.so"
-            name="gz::sim::systems::DetachableJoint">
-            <parent_link>dummy_arm6</parent_link>
-            <child_model>delta_robot</child_model>
-            <child_link>arm6</child_link>
-            <detach_topic>/delta/detach_arm6</detach_topic>
-            <attach_topic>/delta/attach_arm6</attach_topic>
-        </plugin>
-
+        <!-- Joint trajectory controller plugin -->
         <plugin filename="gz-sim-joint-trajectory-controller-system"
             name="gz::sim::systems::JointTrajectoryController">
             <joint_name>jbf1</joint_name>
@@ -856,28 +971,37 @@
 
             <joint_name>BeveljEE</joint_name>
             <initial_position>0.0</initial_position>
-            <position_p_gain>500</position_p_gain>
+            <position_p_gain>50</position_p_gain>
             <position_i_gain>5.0</position_i_gain>
+            <position_d_gain>2.0</position_d_gain>
+            <position_i_min>-5</position_i_min>
+            <position_i_max>5</position_i_max>
             <position_cmd_min>-20.0</position_cmd_min>
             <position_cmd_max>20.0</position_cmd_max>
 
             <joint_name>Tj1</joint_name>
             <initial_position>0.0</initial_position>
             <position_p_gain>50</position_p_gain>
-            <position_i_gain>1.0</position_i_gain>
-            <position_cmd_min>-20.0</position_cmd_min>
-            <position_cmd_max>20.0</position_cmd_max>
+            <position_i_gain>5.0</position_i_gain>
+            <position_d_gain>2.0</position_d_gain>
+            <position_i_min>-5</position_i_min>
+            <position_i_max>5</position_i_max>
+            <position_cmd_min>-2.0</position_cmd_min>
+            <position_cmd_max>2.0</position_cmd_max>
         </plugin>
 
+
+        <!-- Joint state publisher plugin -->
         <plugin filename="gz-sim-joint-state-publisher-system"
             name="gz::sim::systems::JointStatePublisher">
         </plugin>
-
-        <plugin filename="gz-sim-pose-publisher-system" name="gz::sim::systems::PosePublisher">
+        <plugin filename="gz-sim-pose-publisher-system"
+            name="gz::sim::systems::PosePublisher">
             <publish_link_pose>true</publish_link_pose>
             <use_pose_vector_msg>true</use_pose_vector_msg>
             <static_publisher>false</static_publisher>
             <static_update_frequency>100</static_update_frequency>
         </plugin>
+
     </model>
 </sdf>

@@ -45,7 +45,9 @@ install(
     scripts/delta_position_test.py         # Added
     scripts/delta_trajectory_planner.py  # NEW
     scripts/ee_controller.py  # NEW
+    scripts/delta_5dof_controller.py # NEW
     scripts/delta_gcode_interpreter.py
+    scripts/gui_controller.py
     launch/four_ws_control.launch.py
     DESTINATION lib/${PROJECT_NAME}
   )
