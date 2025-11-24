@@ -45,6 +45,7 @@
         </link>
 
         <link name="base_hex">
+            <kinematic>false</kinematic>
             <self_collide>false</self_collide>
             <pose>0 0 0 0 0 0</pose>
             <inertial>
