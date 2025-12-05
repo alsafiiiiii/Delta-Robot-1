@@ -3,7 +3,7 @@ import sys
 import math
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import Pose
+from geometry_msgs.msg import Pose, Twist
 
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, 
                              QSlider, QLabel, QGroupBox, QPushButton)
@@ -17,6 +17,7 @@ class DeltaGUI(QWidget):
         rclpy.init(args=None)
         self.node = rclpy.create_node('delta_gui_publisher')
         self.publisher = self.node.create_publisher(Pose, '/delta/target_pose', 10)
+        self.speed_publisher = self.node.create_publisher(Twist, '/delta/speed_params', 10)
         
         # Timer to handle ROS spinning (keep connection alive)
         self.timer = QTimer()
@@ -27,6 +28,8 @@ class DeltaGUI(QWidget):
         # Scaling factors to map integer sliders to float values
         self.POS_SCALE = 1000.0   # Slider 100 -> 0.1m
         self.ROT_SCALE = 100.0    # Slider 314 -> 3.14 rad
+        self.SPEED_SCALE = 1000.0 # Slider 100 -> 0.1 m/s
+        self.ANG_SPEED_SCALE = 10.0 # Slider 10 -> 1.0 rad/s
 
         self.init_ui()
 
@@ -62,7 +65,20 @@ class DeltaGUI(QWidget):
         self.sl_yaw, self.lbl_yaw = self.create_slider("Yaw (Spin)", -314, 314, 0, rot_layout)
 
         rot_group.setLayout(rot_layout)
+        rot_group.setLayout(rot_layout)
         main_layout.addWidget(rot_group)
+
+        # --- Speed Group ---
+        speed_group = QGroupBox("Speed Settings")
+        speed_layout = QVBoxLayout()
+
+        # Linear Speed: 0.01 to 0.2 m/s
+        self.sl_lin_speed, self.lbl_lin_speed = self.create_slider("Linear Speed (m/s)", 10, 200, 50, speed_layout)
+        # Angular Speed: 0.1 to 5.0 rad/s
+        self.sl_ang_speed, self.lbl_ang_speed = self.create_slider("Angular Speed (rad/s)", 1, 50, 10, speed_layout)
+
+        speed_group.setLayout(speed_layout)
+        main_layout.addWidget(speed_group)
 
         # --- Reset Button ---
         self.btn_reset = QPushButton("Home Position")
@@ -97,7 +113,14 @@ class DeltaGUI(QWidget):
     def update_label(self, slider, label, text):
         val = slider.value()
         # Determine scale based on text context (simple heuristic)
-        scale = self.ROT_SCALE if "Roll" in text or "Pitch" in text or "Yaw" in text else self.POS_SCALE
+        if "Linear Speed" in text:
+            scale = self.SPEED_SCALE
+        elif "Angular Speed" in text:
+            scale = self.ANG_SPEED_SCALE
+        elif "Roll" in text or "Pitch" in text or "Yaw" in text:
+            scale = self.ROT_SCALE
+        else:
+            scale = self.POS_SCALE
         label.setText(f"{text}: {val/scale:.3f}")
 
     def reset_sliders(self):
@@ -109,6 +132,8 @@ class DeltaGUI(QWidget):
         self.sl_roll.setValue(0)
         self.sl_pitch.setValue(0)
         self.sl_yaw.setValue(0)
+        self.sl_lin_speed.setValue(50)
+        self.sl_ang_speed.setValue(10)
         self.blockSignals(False)
         
         # Manually trigger update once
@@ -118,6 +143,8 @@ class DeltaGUI(QWidget):
         self.update_label(self.sl_roll, self.lbl_roll, "Roll (Tilt)")
         self.update_label(self.sl_pitch, self.lbl_pitch, "Pitch (N/A)")
         self.update_label(self.sl_yaw, self.lbl_yaw, "Yaw (Spin)")
+        self.update_label(self.sl_lin_speed, self.lbl_lin_speed, "Linear Speed (m/s)")
+        self.update_label(self.sl_ang_speed, self.lbl_ang_speed, "Angular Speed (rad/s)")
         
         self.update_command()
 
@@ -158,6 +185,12 @@ class DeltaGUI(QWidget):
 
         # 4. Publish
         self.publisher.publish(msg)
+
+        # 5. Publish Speed
+        speed_msg = Twist()
+        speed_msg.linear.x = self.sl_lin_speed.value() / self.SPEED_SCALE
+        speed_msg.angular.z = self.sl_ang_speed.value() / self.ANG_SPEED_SCALE
+        self.speed_publisher.publish(speed_msg)
 
     def ros_spin(self):
         # Non-blocking spin to keep ROS 2 callbacks active (if any)

@@ -6,7 +6,7 @@ interpolates between points to simulate velocity control on position servos.
 
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import Pose
+from geometry_msgs.msg import Pose, Twist
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from builtin_interfaces.msg import Duration
 import numpy as np
@@ -76,6 +76,10 @@ class SmoothDeltaController(Node):
         self.pose_sub = self.create_subscription(
             Pose, '/delta/target_pose', self.new_target_callback, 10)
         
+        # Input: Speed Parameters
+        self.speed_sub = self.create_subscription(
+            Twist, '/delta/speed_params', self.speed_callback, 10)
+        
         # Timer for the control loop (The Heartbeat)
         self.timer = self.create_timer(self.dt, self.control_loop)
         
@@ -93,6 +97,12 @@ class SmoothDeltaController(Node):
         
         self.is_moving = True
         self.get_logger().info(f"New Target Received: {self.target_pos}")
+
+    def speed_callback(self, msg):
+        """Receives new speed settings."""
+        self.linear_speed = msg.linear.x
+        self.angular_speed = msg.angular.z
+        self.get_logger().info(f"Speed Updated: Linear={self.linear_speed:.3f}, Angular={self.angular_speed:.3f}")
 
     def control_loop(self):
         """
@@ -194,7 +204,7 @@ def main(args=None):
         pass
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+    rclpy.shutdown()
 
 if __name__ == '__main__':
     main()

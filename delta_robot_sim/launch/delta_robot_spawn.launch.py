@@ -19,10 +19,21 @@ def generate_launch_description():
         value=str(Path(delta_robot_description_path).parent.resolve())
     )
 
+    # Gazebo plugin path
+    gazebo_plugin_path = SetEnvironmentVariable(
+        name='GZ_SIM_SYSTEM_PLUGIN_PATH',
+        value='/usr/lib/x86_64-linux-gnu/gz-sim-8/plugins/'
+    )
+
     # Load SDF
     sdf_file = os.path.join(delta_robot_description_path, 'models', 'model.sdf')
     with open(sdf_file, 'r') as infp:
         robot_desc = infp.read()
+
+    # Load Box SDF
+    box_sdf_file = os.path.join(delta_robot_description_path, 'models', 'box.sdf')
+    with open(box_sdf_file, 'r') as infp:
+        box_desc = infp.read()
 
     # Setup World
     world_file = os.path.join(delta_robot_sim_path, 'worlds', 'empty.sdf')
@@ -64,6 +75,19 @@ def generate_launch_description():
         ],
     )
 
+    gz_spawn_box = Node(
+        package='ros_gz_sim',
+        executable='create',
+        output='screen',
+        arguments=[
+            '-string', box_desc,
+            '-name', 'box',
+            '-allow_renaming', 'false',
+            '-x', '0', '-y', '0', '-z', '0.1',
+            '-R', '0.0', '-P', '0.0', '-Y', '0.0',
+        ],
+    )
+
     # --- 5. Bridge ---
     bridge = Node(
         package='ros_gz_bridge',
@@ -87,8 +111,10 @@ def generate_launch_description():
 
     return LaunchDescription([
         gazebo_resource_path,
+        gazebo_plugin_path,
         gz_sim,
         gz_spawn_entity,
+        gz_spawn_box,
         bridge,
         rviz2, 
     ])

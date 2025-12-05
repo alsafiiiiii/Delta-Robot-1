@@ -573,7 +573,7 @@
         <joint name="base_joint" type="fixed">
             <parent>base_link</parent>
             <child>base_hex</child>
-            <pose>0 1.0 0 0 0 0</pose>
+            <pose>0 0 0 0 0 0</pose>
         </joint>
 
         <joint name="jbf1" type="revolute">
@@ -855,7 +855,7 @@
 
             <joint_name>BeveljEE</joint_name>
             <initial_position>0.0</initial_position>
-            <position_p_gain>500</position_p_gain>
+            <position_p_gain>50</position_p_gain>
             <position_i_gain>5.0</position_i_gain>
             <position_cmd_min>-20.0</position_cmd_min>
             <position_cmd_max>20.0</position_cmd_max>
@@ -877,6 +877,51 @@
             <use_pose_vector_msg>true</use_pose_vector_msg>
             <static_publisher>false</static_publisher>
             <static_update_frequency>100</static_update_frequency>
+        </plugin>
+        <link name="vacuum_gripper">
+            <pose relative_to="EE">0 0 -0.01 0 0 0</pose>
+            <inertial>
+                <mass>0.0001</mass>
+                <inertia>
+                    <ixx>1e-6</ixx>
+                    <ixy>0</ixy>
+                    <ixz>0</ixz>
+                    <iyy>1e-6</iyy>
+                    <iyz>0</iyz>
+                    <izz>1e-6</izz>
+                </inertia>
+            </inertial>
+            <visual name="vacuum_gripper_visual">
+                <geometry>
+                    <cylinder>
+                        <radius>0.01</radius>
+                        <length>0.02</length>
+                    </cylinder>
+                </geometry>
+                <material>
+                    <ambient>0.1 0.1 0.1 1</ambient>
+                    <diffuse>0.1 0.1 0.1 1</diffuse>
+                </material>
+            </visual>
+            <collision name="vacuum_gripper_collision">
+                <geometry>
+                    <cylinder>
+                        <radius>0.01</radius>
+                        <length>0.02</length>
+                    </cylinder>
+                </geometry>
+            </collision>
+        </link>
+        <joint name="vacuum_gripper_joint" type="fixed">
+            <parent>EE</parent>
+            <child>vacuum_gripper</child>
+        </joint>
+        <plugin filename="libsuction_plugin.so" name="gz::sim::v8::systems::SuctionPlugin">
+            <suction_topic>/suction/enable</suction_topic>
+            <link_name>vacuum_gripper</link_name>
+            <use_suction_radius>true</use_suction_radius>
+            <suction_radius>0.0615</suction_radius>
+            <suction_force>1.0</suction_force>
         </plugin>
     </model>
 </sdf>

@@ -48,6 +48,7 @@ install(
     scripts/delta_5dof_controller.py # NEW
     scripts/delta_gcode_interpreter.py
     scripts/gui_controller.py
+    scripts/joystick_controller.py
     launch/four_ws_control.launch.py
     DESTINATION lib/${PROJECT_NAME}
   )
