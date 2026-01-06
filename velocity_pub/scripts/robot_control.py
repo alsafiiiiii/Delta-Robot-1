@@ -7,7 +7,7 @@ from rclpy.node import Node
 from trajectory_msgs.msg import JointTrajectory
 
 # --- CONFIGURATION ---
-ESP_IP = "10.114.194.11"   # TARGET ESP32 IP
+ESP_IP = "10.18.248.11"   # TARGET ESP32 IP
 ESP_PORT = 3333
 # ---------------------
 

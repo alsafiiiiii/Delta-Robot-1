@@ -10,8 +10,8 @@ class JoystickController(Node):
         super().__init__('joystick_controller')
         
         # --- Parameters ---
-        self.scale_pos = 0.001  # Position increment per loop (Reduced)
-        self.scale_rot = 0.001   # Rotation increment per loop (Reduced)
+        self.scale_pos = 0.0005  # Position increment per loop (Reduced)
+        self.scale_rot = 0.01   # Rotation increment per loop (Reduced)
         
         # --- State ---
         # Initial position (approximate home)
