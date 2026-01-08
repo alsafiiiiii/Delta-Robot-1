@@ -121,15 +121,14 @@ static void motion_task(void *pvParameters) {
             }
         } 
         else {
-            // --- S-CURVE MATH START ---
-            // Warp the phase (0.0 to 1.0) into an S-Curve
-            // Formula: t * t * (3 - 2 * t)
-            float s_curve_phase = phase * phase * (3.0f - 2.0f * phase);
-            // --- S-CURVE MATH END ---
+            // --- LINEAR INTERPOLATION ---
+            // The Python controller (Brain) generates the S-Curve.
+            // The ESP32 (Muscle) simply connects the dots linearly.
+            float linear_phase = phase;
 
             for (int i = 0; i < NUM_SERVOS; i++) {
-                // Use s_curve_phase instead of raw 'phase'
-                float ideal_angle = start_pt.angles[i] + (end_pt.angles[i] - start_pt.angles[i]) * s_curve_phase;
+                // Use linear_phase directly
+                float ideal_angle = start_pt.angles[i] + (end_pt.angles[i] - start_pt.angles[i]) * linear_phase;
                 
                 float diff = fabs(ideal_angle - last_written_angles[i]);
                 
