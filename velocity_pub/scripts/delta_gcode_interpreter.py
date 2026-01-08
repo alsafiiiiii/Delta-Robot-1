@@ -131,25 +131,31 @@ class GCodeVirtualMachine(Node):
         return (next_pos['X'], next_pos['Y'], next_pos['Z'], next_pos['A'], next_pos['C'])
 
     def move_robot(self, x, y, z, a, c):
-        # Calculate travel distance
+        # 1. Calculate travel distance
         dx = x - self.pos['X']
         dy = y - self.pos['Y']
         dz = z - self.pos['Z']
         dist = math.sqrt(dx**2 + dy**2 + dz**2)
         
-        # Calculate Wait Time (10% safety buffer)
+        # 2. Calculate Wait Time (CORNER BLENDING FACTOR)
+        # 1.0 = Stop exactly at corner (Risk of stutter)
+        # 1.1 = Stop and wait (Bad for speed)
+        # 0.9 = Send next command early (Continuous motion!)
+        BLEND_FACTOR = 0.9 
+        
         if dist > 0:
-            wait_time = (dist / self.robot_speed) * 1.1 
+            # We calculate time based on the Controller's known speed
+            wait_time = (dist / self.robot_speed) * BLEND_FACTOR
         else:
-            # If purely rotation, give it a fixed small duration
-            wait_time = 0.5 
+            wait_time = 0.1 # Minimal delay for rotation only
             
-        # Publish Pose
+        # 3. Publish Pose
         msg = Pose()
         msg.position.x = float(x)
         msg.position.y = float(y)
         msg.position.z = float(z)
         
+        # (Assuming you use the quaternion function defined globally)
         q = get_quaternion_from_euler(a, 0.0, c)
         msg.orientation.x = q[0]
         msg.orientation.y = q[1]
@@ -157,15 +163,16 @@ class GCodeVirtualMachine(Node):
         msg.orientation.w = q[3]
         
         self.publisher_.publish(msg)
-        self.get_logger().info(f"Moving -> X{x:.3f} Y{y:.3f} Z{z:.3f} (Wait {wait_time:.2f}s)")
+        self.get_logger().info(f"Moving -> X{x:.3f} Y{y:.3f} (Time: {wait_time:.2f}s)")
         
-        # Update State
+        # 4. Update Internal State
         self.pos['X'] = x
         self.pos['Y'] = y
         self.pos['Z'] = z
         self.pos['A'] = a
         self.pos['C'] = c
         
+        # 5. Sleep just enough to keep the buffer full, but not enough to stop the robot
         time.sleep(wait_time)
 
 def main(args=None):

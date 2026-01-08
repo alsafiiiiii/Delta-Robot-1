@@ -50,6 +50,7 @@ install(
     scripts/gui_controller.py
     scripts/joystick_controller.py
     scripts/camera_pnp.py
+    scripts/delta_3dof_controller.py
     launch/four_ws_control.launch.py
     DESTINATION lib/${PROJECT_NAME}
   )

@@ -47,6 +47,10 @@ class CameraPNP(Node):
         self.cam_height = 800
         self.center_threshold = 20 # pixels
 
+        # --- Motion Parameters ---
+        self.MAX_STEP_XY = 0.005 # 2.5mm per tick (adjusted for responsiveness)
+        self.MAX_STEP_Z = 0.005  # 5mm per tick
+
         self.get_logger().info("Camera PNP Node Started")
 
     def image_callback(self, msg):
@@ -89,6 +93,41 @@ class CameraPNP(Node):
                 self.target_found = False
         else:
             self.target_found = False
+
+    def move_towards(self, target_x, target_y, target_z, step_xy, step_z):
+        """
+        Moves current pose towards target pose by at most step amount.
+        Returns True if reached (within small tolerance), False otherwise.
+        """
+        done_x = False
+        done_y = False
+        done_z = False
+
+        # X
+        diff_x = target_x - self.current_x
+        if abs(diff_x) <= step_xy:
+            self.current_x = target_x
+            done_x = True
+        else:
+            self.current_x += np.sign(diff_x) * step_xy
+
+        # Y
+        diff_y = target_y - self.current_y
+        if abs(diff_y) <= step_xy:
+            self.current_y = target_y
+            done_y = True
+        else:
+            self.current_y += np.sign(diff_y) * step_xy
+            
+        # Z
+        diff_z = target_z - self.current_z
+        if abs(diff_z) <= step_z:
+            self.current_z = target_z
+            done_z = True
+        else:
+            self.current_z += np.sign(diff_z) * step_z
+
+        return done_x and done_y and done_z
 
     def control_loop(self):
         # State Machine
@@ -134,8 +173,18 @@ class CameraPNP(Node):
             # Let's assume 1-1 mapping for now and correct signs if it runs away
             # Using -Y for Camera X because image x axis usually right, robot Y axis typically left?
             
-            dx = -err_y * k_p # Image Y is typically Robot X axis (Forward/Back)
-            dy = -err_x * k_p # Image X is typically Robot Y axis (Left/Right)
+            # Incorporate velocity clamping
+            
+            dx = -err_y * k_p 
+            dy = -err_x * k_p 
+
+            # Clamp velocities
+            # Calculate magnitude
+            mag = np.hypot(dx, dy)
+            if mag > self.MAX_STEP_XY:
+                scale = self.MAX_STEP_XY / mag
+                dx *= scale
+                dy *= scale
             
             self.current_x += dx
             self.current_y += dy
@@ -147,15 +196,24 @@ class CameraPNP(Node):
                 self.state = "DESCEND"
 
         elif self.state == "DESCEND":
-            self.current_z -= 0.005 # Descend slowly
+            self.current_z -= self.MAX_STEP_Z # Descend slowly
             
             # Continue Centering while descending
             if self.target_found:
                  err_x = self.box_center_x - (self.cam_width / 2)
                  err_y = self.box_center_y - (self.cam_height / 2)
                  k_p = 0.0002
-                 self.current_x += (-err_y * k_p)
-                 self.current_y += (-err_x * k_p)
+                 dx = -err_y * k_p
+                 dy = -err_x * k_p
+                 
+                 mag = np.hypot(dx, dy)
+                 if mag > self.MAX_STEP_XY:
+                     scale = self.MAX_STEP_XY / mag
+                     dx *= scale
+                     dy *= scale
+
+                 self.current_x += dx
+                 self.current_y += dy
             
             self.publish_pose(self.current_x, self.current_y, self.current_z)
 
@@ -174,24 +232,29 @@ class CameraPNP(Node):
             self.state = "LIFT"
 
         elif self.state == "LIFT":
-            self.current_z += 0.005
+            self.current_z += self.MAX_STEP_Z
             self.publish_pose(self.current_x, self.current_y, self.current_z)
             
             if self.current_z >= self.SAFE_Z:
                 self.state = "PLACE"
 
         elif self.state == "PLACE":
-            self.current_x = self.PLACE_LOCATION[0]
-            self.current_y = self.PLACE_LOCATION[1]
-            # self.current_z = self.PLACE_LOCATION[2] # Keep high for now?
+            # Smoothly move to place location
+            target_x = self.PLACE_LOCATION[0]
+            target_y = self.PLACE_LOCATION[1]
+            target_z = self.PLACE_LOCATION[2]
+            
+            # Use safe Z for travel?
+            # For now, let's keep Z at current (SAFE_Z) until over the spot, then drop?
+            # Creating a mini-sequence inside PLACE or just going direct:
+            
+            reached = self.move_towards(target_x, target_y, target_z, self.MAX_STEP_XY, self.MAX_STEP_Z)
             
             self.publish_pose(self.current_x, self.current_y, self.current_z)
             
-            # Check distance (simple hack, just wait or check coords)
-            # We assume the controller handles the interpolation
-            # We just wait a bit
-            time.sleep(3.0) 
-            self.state = "DROP"
+            if reached:
+                 # Optional: wait a bit to stabilize
+                 self.state = "DROP"
 
         elif self.state == "DROP":
             self.get_logger().info("Dropping object...")
@@ -199,13 +262,23 @@ class CameraPNP(Node):
             msg.data = False
             for _ in range(10):
                 self.suction_pub.publish(msg)
-            time.sleep(1.0)
-            self.state = "DONE"
+            self.state = "RESET"
             
-        elif self.state == "DONE":
-             self.get_logger().info("Mission Complete.")
-             # Optionally reset or exit
-             # self.destroy_node()
+        elif self.state == "RESET":
+             self.get_logger().info("Resetting...")
+             # 1. Lift to Safe Z
+             # 2. Go to 0,0
+             
+             target_x = 0.0
+             target_y = 0.0
+             target_z = self.SAFE_Z
+             
+             reached = self.move_towards(target_x, target_y, target_z, self.MAX_STEP_XY, self.MAX_STEP_Z)
+             self.publish_pose(self.current_x, self.current_y, self.current_z)
+             
+             if reached:
+                 self.target_found = False # Reset target flag
+                 self.state = "SEARCH"
 
     def publish_pose(self, x, y, z):
         msg = Pose()

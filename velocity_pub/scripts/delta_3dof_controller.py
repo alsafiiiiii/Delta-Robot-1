@@ -26,20 +26,23 @@ class SmoothDeltaController(Node):
     def __init__(self):
         super().__init__('smooth_delta_controller')
         
+        # --- CONFIGURATION ---
         self.loop_rate = 20.0  
         self.dt = 1.0 / self.loop_rate
         self.linear_speed = 0.05  
         self.angular_speed = 1.0  
         
+        # --- SAFETY SETTINGS ---
+        self.min_z_limit = -0.28 
+
         # Geometry
         self.robot = RobotDelta(np.array([0.104, 0.040, 0.105, 0.205]))
-        self.tool_offset = 0.033
         
         # State
-        self.current_pos = np.array([0.0, 0.0, -0.25]) 
+        self.current_pos = np.array([0.0, 0.0, -0.22]) 
         self.current_tilt = 0.0
         self.current_spin = 0.0
-        self.target_pos = np.array([0.0, 0.0, -0.25])
+        self.target_pos = np.array([0.0, 0.0, -0.22])
         self.target_tilt = 0.0
         self.target_spin = 0.0
         self.is_moving = False
@@ -49,13 +52,22 @@ class SmoothDeltaController(Node):
         self.speed_sub = self.create_subscription(Twist, '/delta/speed_params', self.speed_callback, 10)
         
         self.timer = self.create_timer(self.dt, self.control_loop)
-        self.get_logger().info('Smooth Controller Started.')
+        self.get_logger().info('Smooth Controller Started (Wrist Only Mode).')
 
     def new_target_callback(self, msg):
-        self.target_pos = np.array([msg.position.x, msg.position.y, msg.position.z])
-        r, p, y = quaternion_to_euler(msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w)
-        self.target_tilt = r
-        self.target_spin = y
+        # Apply Safety Limit to Z
+        safe_z = max(msg.position.z, self.min_z_limit)
+        
+        # [FIX] Force 3DOF Behavior: Ignore orientation to prevent jerk/wobble.
+        # The 3DOF controller does not have tool offset compensation logic.
+        self.target_pos = np.array([msg.position.x, msg.position.y, safe_z])
+        
+        # Enforce vertical tool orientation
+        self.target_tilt = 0.0
+        self.target_spin = 0.0
+        # r, p, y = quaternion_to_euler(msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w)
+        # self.target_tilt = r
+        # self.target_spin = y
         self.is_moving = True
 
     def speed_callback(self, msg):
@@ -94,8 +106,9 @@ class SmoothDeltaController(Node):
 
     def solve_and_publish(self):
         try:
-            offset_vec = np.array([0.0, self.tool_offset * np.sin(self.current_tilt), -self.tool_offset * np.cos(self.current_tilt)])
-            wrist_pos = self.current_pos - offset_vec
+            # DIRECT MAPPING: Target = Wrist Position
+            wrist_pos = self.current_pos
+
             wrist_frame = Frame.from_euler_3(np.array([0., 0., 0.]), np.array([[wrist_pos[0]], [wrist_pos[1]], [wrist_pos[2]]]))
             
             joint_angles = self.robot.inverse(wrist_frame).flatten()

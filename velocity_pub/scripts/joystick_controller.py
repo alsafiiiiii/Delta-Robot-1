@@ -2,7 +2,7 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Joy
-from geometry_msgs.msg import Pose
+from geometry_msgs.msg import Pose, Twist
 from std_msgs.msg import Empty, Bool
 
 class JoystickController(Node):
@@ -10,7 +10,7 @@ class JoystickController(Node):
         super().__init__('joystick_controller')
         
         # --- Parameters ---
-        self.scale_pos = 0.0005  # Position increment per loop (Reduced)
+        self.scale_pos = 0.0005  # Position increment per loop (Increased for better speed control)
         self.scale_rot = 0.01   # Rotation increment per loop (Reduced)
         
         # --- State ---
@@ -21,6 +21,7 @@ class JoystickController(Node):
 
         # --- Publishers ---
         self.pose_pub = self.create_publisher(Pose, '/delta/target_pose', 10)
+        self.speed_pub = self.create_publisher(Twist, '/delta/speed_params', 10)
         self.suction_pub = self.create_publisher(Bool, '/suction/command', 10)
         
         # --- Subscribers ---
@@ -162,6 +163,12 @@ class JoystickController(Node):
         msg.position.x = self.target_pos[0]
         msg.position.y = self.target_pos[1]
         msg.position.z = self.target_pos[2]
+
+        # Publish Speed Params to ensure 3DOF controller doesn't clamp us
+        speed_msg = Twist()
+        speed_msg.linear.x = 0.2 # Allow up to 20cm/s
+        speed_msg.angular.z = 1.0
+        self.speed_pub.publish(speed_msg)
         
         import math
         r, p, y = self.target_rpy
