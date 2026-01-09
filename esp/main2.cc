@@ -24,7 +24,7 @@ static const char *TAG = "delta_buffer_driver";
 #define STARTUP_COUNT   6    
 
 // --- TIMING MATH ---
-#define INTERP_STEP     0.4f 
+#define INTERP_STEP     0.5f 
 #define MOTION_FREQ_HZ  50    
 
 // CHANGED: Only pins 2, 4, 5 for the arms
@@ -32,8 +32,8 @@ static const int SERVO_GPIOS[NUM_SERVOS] = {2, 4, 5};
 
 #define SERVO_MIN_PULSEWIDTH_US 500
 #define SERVO_MAX_PULSEWIDTH_US 2400
-#define SERVO_TIMEBASE_RESOLUTION_HZ 1000000
-#define SERVO_TIMEBASE_PERIOD        20000 
+#define SERVO_TIMEBASE_RESOLUTION_HZ 10000000
+#define SERVO_TIMEBASE_PERIOD        200000
 
 typedef struct { float angles[5]; } delta_packet_t; // Keep struct size same for compatibility
 mcpwm_cmpr_handle_t comparators[NUM_SERVOS];

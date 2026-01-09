@@ -27,13 +27,12 @@ class SmoothDeltaController(Node):
         super().__init__('smooth_delta_controller')
         
         # --- CONFIGURATION ---
-        self.loop_rate = 20.0  
+        self.loop_rate = 25.0  
         self.dt = 1.0 / self.loop_rate
         self.linear_speed = 0.05  
         self.angular_speed = 1.0  
         
         # --- SAFETY SETTINGS ---
-        self.min_z_limit = -0.28 
 
         # Geometry
         self.robot = RobotDelta(np.array([0.104, 0.040, 0.105, 0.205]))
@@ -55,12 +54,9 @@ class SmoothDeltaController(Node):
         self.get_logger().info('Smooth Controller Started (Wrist Only Mode).')
 
     def new_target_callback(self, msg):
-        # Apply Safety Limit to Z
-        safe_z = max(msg.position.z, self.min_z_limit)
         
-        # [FIX] Force 3DOF Behavior: Ignore orientation to prevent jerk/wobble.
         # The 3DOF controller does not have tool offset compensation logic.
-        self.target_pos = np.array([msg.position.x, msg.position.y, safe_z])
+        self.target_pos = np.array([msg.position.x, msg.position.y, msg.position.z])
         
         # Enforce vertical tool orientation
         self.target_tilt = 0.0
@@ -88,18 +84,6 @@ class SmoothDeltaController(Node):
             self.current_pos += (pos_error / dist) * step_dist
         else:
             self.current_pos = np.copy(self.target_pos)
-
-        # Interpolate Orientation
-        tilt_err = self.target_tilt - self.current_tilt
-        spin_err = self.target_spin - self.current_spin
-        
-        if abs(tilt_err) > step_ang: self.current_tilt += math.copysign(step_ang, tilt_err)
-        else: self.current_tilt = self.target_tilt
-        
-        if abs(spin_err) > step_ang: self.current_spin += math.copysign(step_ang, spin_err)
-        else: self.current_spin = self.target_spin
-            
-        if dist <= step_dist and abs(tilt_err) <= step_ang and abs(spin_err) <= step_ang:
             self.is_moving = False
             
         self.solve_and_publish()
