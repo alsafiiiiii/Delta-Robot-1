@@ -50,22 +50,28 @@ class GCodeVirtualMachine(Node):
         self.run_gcode()
 
     def run_gcode(self):
-        self.get_logger().info(f"Parsing file: {self.filename}")
-        
-        if not os.path.exists(self.filename):
-            self.get_logger().error(f"File not found: {self.filename}")
-            return
+        try:
+            while rclpy.ok():
+                self.get_logger().info(f"Parsing file: {self.filename}")
+                
+                if not os.path.exists(self.filename):
+                    self.get_logger().error(f"File not found: {self.filename}")
+                    time.sleep(1.0)
+                    continue
 
-        with open(self.filename, 'r') as f:
-            gcode_text = f.read()
+                with open(self.filename, 'r') as f:
+                    gcode_text = f.read()
 
-        parsed_lines = GcodeParser(gcode_text).lines
+                parsed_lines = GcodeParser(gcode_text).lines
 
-        for line in parsed_lines:
-            if not rclpy.ok(): break
-            self.execute_command(line)
-            
-        self.get_logger().info("Job Complete.")
+                for line in parsed_lines:
+                    if not rclpy.ok(): break
+                    self.execute_command(line)
+                
+                self.get_logger().info("Job Complete. Restarting in 1s...")
+                time.sleep(1.0)
+        except KeyboardInterrupt:
+            self.get_logger().info("Stopping G-Code Looper...")
 
     def execute_command(self, line):
         cmd = line.command_str
@@ -148,13 +154,13 @@ class GCodeVirtualMachine(Node):
         
         # Use simple Factor to allow smooth continuous motion
         # If we sleep EXACTLY the time, rounding errors might cause stutter
-        # 1.05 ensures we reach the corner fully before sending next command
-        BLEND_FACTOR = 1.05
+        # 0.8 means we send the next command when 80% of the way there, creating a blend
+        BLEND_FACTOR = 1.0
         
         if dist > 0.0001:
             wait_time = (dist / self.robot_speed) * BLEND_FACTOR
         else:
-            wait_time = 0.1
+            wait_time = 0.05
             
         msg = Pose()
         msg.position.x = float(x)

@@ -3,89 +3,25 @@
 ; A = Tilt (X-axis), C = Spin (Z-axis)
 
 ; 1. Go to Start Height (Center)
-G1 X0.0 Y0.0 Z-0.22 A0.0 C0.0 F12
+G1 X0.0 Y0.0 Z-0.22 A0.0 C0.0 F20
 
 ; 2. Move to Corner 1 (Top Right)
-G1 X0.05 Y0.05 Z-0.25
+G1 X0.05 Y0.05 Z-0.235
 
 ; 3. Tilt Tool Outward (Tilt +0.2 rad)
-G1 X0.05 Y0.05 Z-0.25
-
+G1 X0.05 Y0.05 Z-0.235
 ; 4. Move to Corner 2 (Bottom Right) with Tilt
-G1 X0.05 Y-0.05 Z-0.25
+G1 X0.05 Y-0.05 Z-0.235
 
 ; 5. Spin Tool 90 degrees (1.57 rad) while moving to Corner 3
-G1 X-0.05 Y-0.05 Z-0.25
+G1 X-0.05 Y-0.05 Z-0.235
 
 ; 6. Remove Tilt (A0) at Corner 3
-G1 X-0.05 Y-0.05 Z-0.25
+G1 X-0.05 Y-0.05 Z-0.235
 
 ; 7. Move to Corner 4 (Top Left)
-G1 X-0.05 Y0.05 Z-0.25
+G1 X-0.05 Y0.05 Z-0.235
 
-G1 X0.05 Y0.05 Z-0.25
+G1 X0.05 Y0.05 Z-0.235
 ; 8. Return to Center and Reset Rotation
-G1 X0.0 Y0.0 Z-0.22
-
-G1 X0.05 Y0.05 Z-0.25
-
-; 3. Tilt Tool Outward (Tilt +0.2 rad)
-G1 X0.05 Y0.05 Z-0.25
-
-; 4. Move to Corner 2 (Bottom Right) with Tilt
-G1 X0.05 Y-0.05 Z-0.25
-
-; 5. Spin Tool 90 degrees (1.57 rad) while moving to Corner 3
-G1 X-0.05 Y-0.05 Z-0.25
-
-; 6. Remove Tilt (A0) at Corner 3
-G1 X-0.05 Y-0.05 Z-0.25
-
-; 7. Move to Corner 4 (Top Left)
-G1 X-0.05 Y0.05 Z-0.25
-
-G1 X0.05 Y0.05 Z-0.25
-; 8. Return to Center and Reset Rotation
-G1 X0.0 Y0.0 Z-0.22
-
-G1 X0.05 Y0.05 Z-0.25
-
-; 3. Tilt Tool Outward (Tilt +0.2 rad)
-G1 X0.05 Y0.05 Z-0.25
-
-; 4. Move to Corner 2 (Bottom Right) with Tilt
-G1 X0.05 Y-0.05 Z-0.25
-
-; 5. Spin Tool 90 degrees (1.57 rad) while moving to Corner 3
-G1 X-0.05 Y-0.05 Z-0.25
-
-; 6. Remove Tilt (A0) at Corner 3
-G1 X-0.05 Y-0.05 Z-0.25
-
-; 7. Move to Corner 4 (Top Left)
-G1 X-0.05 Y0.05 Z-0.25
-
-G1 X0.05 Y0.05 Z-0.25
-; 8. Return to Center and Reset Rotation
-G1 X0.0 Y0.0 Z-0.22
-
-G1 X0.05 Y0.05 Z-0.25
-
-; 3. Tilt Tool Outward (Tilt +0.2 rad)
-G1 X0.05 Y0.05 Z-0.25
-
-; 4. Move to Corner 2 (Bottom Right) with Tilt
-G1 X0.05 Y-0.05 Z-0.25
-
-; 5. Spin Tool 90 degrees (1.57 rad) while moving to Corner 3
-G1 X-0.05 Y-0.05 Z-0.25
-
-; 6. Remove Tilt (A0) at Corner 3
-G1 X-0.05 Y-0.05 Z-0.25
-
-; 7. Move to Corner 4 (Top Left)
-G1 X-0.05 Y0.05 Z-0.25
-
-G1 X0.05 Y0.05 Z-0.25
-; 8. Return to Center and Reset Rotation
-G1 X0.0 Y0.0 Z-0.22
+G1 X0.0 Y0.0 Z-0.20

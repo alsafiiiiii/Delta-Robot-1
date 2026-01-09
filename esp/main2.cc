@@ -20,26 +20,29 @@ static const char *TAG = "delta_buffer_driver";
 #define MIN_STEP_DEG   0.40f
 
 // --- BUFFER SETTINGS ---
-#define BUFFER_SIZE     16   
-#define STARTUP_COUNT   6    
+#define BUFFER_SIZE     64   // Increased from 32 -> 64
+#define STARTUP_COUNT   10   // Increased from 2 -> 10 (200ms buffer)
 
 // --- TIMING MATH ---
-#define INTERP_STEP     0.5f 
-#define MOTION_FREQ_HZ  50    
+#define INTERP_STEP     0.5f // 0.5 step = 2 sub-steps per packet
+#define MOTION_FREQ_HZ  100  // 50Hz Packet * 2 = 100Hz Motion Loop (Min 10ms tick support)
+
+// ... (existing code: pins and definitions) ...
 
 // CHANGED: Only pins 2, 4, 5 for the arms
 static const int SERVO_GPIOS[NUM_SERVOS] = {2, 4, 5}; 
 
 #define SERVO_MIN_PULSEWIDTH_US 500
 #define SERVO_MAX_PULSEWIDTH_US 2400
-#define SERVO_TIMEBASE_RESOLUTION_HZ 10000000
-#define SERVO_TIMEBASE_PERIOD        200000
+#define SERVO_TIMEBASE_RESOLUTION_HZ 3000000 
+#define SERVO_TIMEBASE_PERIOD        60000   
 
-typedef struct { float angles[5]; } delta_packet_t; // Keep struct size same for compatibility
+typedef struct { float angles[5]; } delta_packet_t; 
 mcpwm_cmpr_handle_t comparators[NUM_SERVOS];
 float last_written_angles[NUM_SERVOS] = {90.0, 90.0, 90.0};
 
 // --- RING BUFFER ---
+SemaphoreHandle_t buffer_mutex;
 delta_packet_t buffer[BUFFER_SIZE];
 volatile int head = 0;
 volatile int tail = 0;
@@ -48,7 +51,8 @@ volatile int count = 0;
 static inline uint32_t angle_to_compare(float angle) {
     if (angle < 0) angle = 0;
     if (angle > 180) angle = 180;
-    return (angle) * (SERVO_MAX_PULSEWIDTH_US - SERVO_MIN_PULSEWIDTH_US) / 180 + SERVO_MIN_PULSEWIDTH_US;
+    uint32_t us = (angle) * (SERVO_MAX_PULSEWIDTH_US - SERVO_MIN_PULSEWIDTH_US) / 180 + SERVO_MIN_PULSEWIDTH_US;
+    return us * 3; 
 }
 
 // --- TASK 1: UDP RECEIVER ---
@@ -70,6 +74,7 @@ static void udp_server_task(void *pvParameters) {
         int len = recvfrom(sock, &packet, sizeof(delta_packet_t), 0, (struct sockaddr *)&source_addr, &socklen);
         
         if (len == sizeof(delta_packet_t)) {
+            xSemaphoreTake(buffer_mutex, portMAX_DELAY);
             if (count < BUFFER_SIZE) {
                 buffer[head] = packet;
                 head = (head + 1) % BUFFER_SIZE;
@@ -80,10 +85,11 @@ static void udp_server_task(void *pvParameters) {
                 head = (head + 1) % BUFFER_SIZE;
                 ESP_LOGW(TAG, "Buffer Overflow! (Dropping oldest)");
             }
+            int current_count = count; // Capture for logging to avoid race in LOGI
+            xSemaphoreGive(buffer_mutex);
 
-            // Only log the first 3 angles
-            ESP_LOGI(TAG, "RX: %6.2f %6.2f %6.2f | Buff: %d/%d", 
-                     packet.angles[0], packet.angles[1], packet.angles[2], count, BUFFER_SIZE);
+            // Only log randomly or it floods given we want speed, but let's keep it for now
+            // ESP_LOGI(TAG, "RX: %6.2f", packet.angles[0]); 
         }
     }
 }
@@ -91,7 +97,8 @@ static void udp_server_task(void *pvParameters) {
 // --- TASK 2: INTERPOLATOR ---
 static void motion_task(void *pvParameters) {
     TickType_t xLastWakeTime = xTaskGetTickCount();
-    const TickType_t xFrequency = pdMS_TO_TICKS(1000 / MOTION_FREQ_HZ); 
+    TickType_t xFrequency = pdMS_TO_TICKS(1000 / MOTION_FREQ_HZ); 
+    if (xFrequency == 0) xFrequency = 1; // Safety: Minimum 1 tick to prevent crash 
 
     float phase = 0.0f; 
     bool active = false;
@@ -107,6 +114,8 @@ static void motion_task(void *pvParameters) {
         vTaskDelayUntil(&xLastWakeTime, xFrequency); 
 
         if (!active) {
+            bool ready = false;
+            xSemaphoreTake(buffer_mutex, portMAX_DELAY);
             if (count >= STARTUP_COUNT) {
                 start_pt = buffer[tail];
                 tail = (tail + 1) % BUFFER_SIZE;
@@ -114,29 +123,26 @@ static void motion_task(void *pvParameters) {
                 
                 if (count > 0) {
                     end_pt = buffer[tail]; 
-                    active = true;
-                    phase = 0.0f;
-                    ESP_LOGI(TAG, ">>> STARTING MOTION (Buffered: %d)", count);
+                    ready = true;
                 }
+            }
+            xSemaphoreGive(buffer_mutex);
+
+            if (ready) {
+                active = true;
+                phase = 0.0f;
+                // ESP_LOGI(TAG, ">>> STARTING MOTION");
             }
         } 
         else {
-            // --- S-CURVE MATH START ---
-            // Warp the phase (0.0 to 1.0) into an S-Curve
-            // Formula: t * t * (3 - 2 * t)
+            // --- S-CURVE INTERPOLATION ---
             float s_curve_phase = phase * phase * (3.0f - 2.0f * phase);
-            // --- S-CURVE MATH END ---
 
             for (int i = 0; i < NUM_SERVOS; i++) {
-                // Use s_curve_phase instead of raw 'phase'
                 float ideal_angle = start_pt.angles[i] + (end_pt.angles[i] - start_pt.angles[i]) * s_curve_phase;
                 
-                float diff = fabs(ideal_angle - last_written_angles[i]);
-                
-                if (diff > MIN_STEP_DEG) {
-                    mcpwm_comparator_set_compare_value(comparators[i], angle_to_compare(ideal_angle));
-                    last_written_angles[i] = ideal_angle;
-                }
+                // Always write to ensure smoothness, MCPWM is fast enough
+                mcpwm_comparator_set_compare_value(comparators[i], angle_to_compare(ideal_angle));
             }
 
             phase += INTERP_STEP;
@@ -144,12 +150,36 @@ static void motion_task(void *pvParameters) {
             if (phase >= 1.0f) {
                 phase -= 1.0f; 
                 start_pt = end_pt;
-                tail = (tail + 1) % BUFFER_SIZE; 
-                count--;
-
+                
+                bool has_next = false;
+                xSemaphoreTake(buffer_mutex, portMAX_DELAY);
+                // We DON'T pop 'tail' here because 'end_pt' was just a peek at the next one?
+                // Actually in the previous logic, we weren't peeking, we were consuming.
+                // Let's correct the logic:
+                // 1. We just finished the segment from start_pt to end_pt.
+                // 2. So now end_pt becomes the new start_pt.
+                // 3. We need to fetch a NEW end_pt from the buffer.
+                // 4. The previous 'end_pt' was already consumed from the buffer in the sense that 'tail' pointed to it?
+                // Wait, the previous logic was:
+                //   start_pt = buffer[tail]; count--; tail++;
+                //   if (count > 0) end_pt = buffer[tail]; (This is PEEKING at the new tail)
+                // correct.
+                
+                // So now, we need to CONSUME the one we were peeking at, to make it the new start?
+                // actually, let's keep it simple:
+                // start_pt is implicitly end_pt.
+                // We just need to pop one more from the buffer to be the next end_pt.
+                
+                tail = (tail + 1) % BUFFER_SIZE;
+                count--; // Consume the one that was 'end_pt'
+                
                 if (count > 0) {
-                    end_pt = buffer[tail]; 
-                } else {
+                    end_pt = buffer[tail]; // Peek at next
+                    has_next = true;
+                }
+                xSemaphoreGive(buffer_mutex);
+
+                if (!has_next) {
                     active = false;
                     ESP_LOGW(TAG, "!!! BUFFER EMPTY (Underrun) !!!");
                 }
@@ -168,6 +198,7 @@ static void wifi_handler(void* arg, esp_event_base_t base, int32_t id, void* dat
 }
 
 void app_main(void) {
+    buffer_mutex = xSemaphoreCreateMutex(); // Create Mutex
     nvs_flash_init();
     s_wifi_event_group = xEventGroupCreate();
     esp_netif_init(); esp_event_loop_create_default(); esp_netif_create_default_wifi_sta();
@@ -175,15 +206,18 @@ void app_main(void) {
     esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_handler, NULL, NULL);
     esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_handler, NULL, NULL);
     wifi_config_t w_cfg = { .sta = { .ssid = WIFI_SSID, .password = WIFI_PASS } };
-    esp_wifi_set_mode(WIFI_MODE_STA); esp_wifi_set_config(WIFI_IF_STA, &w_cfg); esp_wifi_start();
+    esp_wifi_set_mode(WIFI_MODE_STA); 
+    esp_wifi_set_config(WIFI_IF_STA, &w_cfg); 
+    esp_wifi_start();
+    esp_wifi_set_ps(WIFI_PS_NONE); // CRITICAL: Disable power save for low latency
     xEventGroupWaitBits(s_wifi_event_group, WIFI_CONNECTED_BIT, pdFALSE, pdFALSE, portMAX_DELAY);
 
     // MCPWM Setup (Simpler now - Just Group 0)
     mcpwm_timer_handle_t timer = NULL;
     mcpwm_timer_config_t t_cfg = { 
         .clk_src=MCPWM_TIMER_CLK_SRC_DEFAULT, 
-        .resolution_hz=1000000, 
-        .period_ticks=20000, 
+        .resolution_hz=3000000,  // 3MHz (Max fits in 16-bit timer for 50Hz)
+        .period_ticks=60000,     // 60,000 ticks = 20ms (50Hz)
         .count_mode=MCPWM_TIMER_COUNT_MODE_UP 
     };
     t_cfg.group_id=0; 
