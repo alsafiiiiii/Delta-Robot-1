@@ -2,6 +2,7 @@
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Pose, Twist
+from std_msgs.msg import Bool
 import time
 import math
 import sys
@@ -26,85 +27,99 @@ def get_quaternion_from_euler(roll, pitch, yaw):
 class GCodeVirtualMachine(Node):
     def __init__(self, filename):
         super().__init__('gcode_sender')
+        
+        # --- Config ---
+        self.filename = filename
+        
+        # --- Pub/Sub ---
         self.publisher_ = self.create_publisher(Pose, '/delta/target_pose', 10)
         self.speed_pub_ = self.create_publisher(Twist, '/delta/speed_params', 10)
         
-        # --- Robot Settings ---
-        self.robot_speed = 0.05  # m/s (Default)
+        # Feedback from Controller
+        self.create_subscription(Bool, '/delta/movement_done', self.movement_done_callback, 10)
         
-        # --- Virtual Machine State ---
+        # --- State ---
+        self.robot_speed = 0.05  # m/s (Default)
         self.mode = 'ABS'         # 'ABS' (G90) or 'REL' (G91)
         self.unit_scale = 1.0     # Default to Meters (1.0)
+        self.pos = {'X': 0.0, 'Y': 0.0, 'Z': -0.25, 'A': 0.0, 'C': 0.0}
         
-        # Current Position (Absolute Meters, Radians)
-        self.pos = {
-            'X': 0.0, 'Y': 0.0, 'Z': -0.25, 'A': 0.0, 'C': 0.0
-        }
+        self.lines = []
+        self.current_line_idx = 0
+        self.waiting_for_movement = False
+        self.job_active = False
         
-        self.filename = filename
+        # Load File
+        self.load_gcode()
         
-        # Wait for ROS connection
-        self.get_logger().info("Connecting to ROS...")
-        time.sleep(2.0)
+        # Execution Timer (Using timer instead of while loop to be non-blocking)
+        self.timer = self.create_timer(0.01, self.execute_loop) # 100Hz check
         
-        self.run_gcode()
+        self.get_logger().info("G-Code VM Ready. Waiting for ROS2...")
 
-    def run_gcode(self):
-        try:
-            while rclpy.ok():
-                self.get_logger().info(f"Parsing file: {self.filename}")
-                
-                if not os.path.exists(self.filename):
-                    self.get_logger().error(f"File not found: {self.filename}")
-                    time.sleep(1.0)
-                    continue
+    def load_gcode(self):
+        if not os.path.exists(self.filename):
+            self.get_logger().error(f"File not found: {self.filename}")
+            sys.exit(1)
 
-                with open(self.filename, 'r') as f:
-                    gcode_text = f.read()
+        with open(self.filename, 'r') as f:
+            gcode_text = f.read()
 
-                parsed_lines = GcodeParser(gcode_text).lines
+        self.lines = GcodeParser(gcode_text).lines
+        self.current_line_idx = 0
+        self.job_active = True
+        self.get_logger().info(f"Loaded {len(self.lines)} lines. Starting...")
 
-                for line in parsed_lines:
-                    if not rclpy.ok(): break
-                    self.execute_command(line)
-                
-                self.get_logger().info("Job Complete. Restarting in 1s...")
-                time.sleep(1.0)
-        except KeyboardInterrupt:
-            self.get_logger().info("Stopping G-Code Looper...")
+    def movement_done_callback(self, msg):
+        if self.waiting_for_movement and msg.data:
+            self.waiting_for_movement = False
+            self.get_logger().debug("Movement ACK received.")
 
-    def execute_command(self, line):
+    def execute_loop(self):
+        if not self.job_active: return
+        
+        # If we are waiting for robot to finish a move, DO NOTHING
+        if self.waiting_for_movement:
+            return
+            
+        # If we are done with file
+        if self.current_line_idx >= len(self.lines):
+            self.get_logger().info("G-Code Job Complete!")
+            self.job_active = False
+            # Optional: Loop?
+            # self.current_line_idx = 0 
+            # self.job_active = True
+            return
+
+        # Execute Next Line
+        line = self.lines[self.current_line_idx]
+        self.current_line_idx += 1
+        
+        self.process_command(line)
+
+    def process_command(self, line):
         cmd = line.command_str
         params = line.params
         
-        # --- Speed Control (F) ---
+        # --- Speed (F) ---
         if 'F' in params:
             f_val = float(params['F'])
-            
-            # Heuristic: If F > 100 with unit_scale=1.0, user probably meant mm/min
-            # but we respect strict G-code if possible.
-            # Standard: F is units/min.
-            
-            speed_per_min = f_val
-            if self.unit_scale != 1.0: # If mm (0.001) or inch (0.0254)
-                # Convert active units to meters
-                speed_meters_min = speed_per_min * self.unit_scale
+            # Standard G-Code: F is usually units/min
+            # Heuristic: If value > 10, it's probably mm/min
+            if f_val > 10.0:
+                self.robot_speed = (f_val * self.unit_scale) / 60.0
             else:
-                # Active units are Meters
-                speed_meters_min = speed_per_min
+                self.robot_speed = f_val # Assume m/s if very small?
                 
-            self.robot_speed = speed_meters_min / 60.0
-            self.robot_speed = max(0.002, self.robot_speed) # Safety Floor
-
-            # Publish Update
-            s_msg = Twist()
-            s_msg.linear.x = float(self.robot_speed)
-            s_msg.angular.z = 1.0 
-            self.speed_pub_.publish(s_msg)
+            self.robot_speed = max(0.001, self.robot_speed) # Safety
             
-            self.get_logger().info(f"Speed Update: F{f_val} -> {self.robot_speed:.4f} m/s")
+            # Publish Speed Update
+            msg = Twist()
+            msg.linear.x = float(self.robot_speed)
+            msg.angular.z = 1.0 
+            self.speed_pub_.publish(msg)
 
-        # --- State Commands ---
+        # --- G Codes ---
         if cmd == 'G90':
             self.mode = 'ABS'
         elif cmd == 'G91':
@@ -118,12 +133,11 @@ class GCodeVirtualMachine(Node):
         elif cmd == 'G28':
             self.get_logger().info("Homing...")
             self.move_robot(0.0, 0.0, -0.25, 0.0, 0.0)
-
-        # --- Motion ---
+            
         elif cmd in ['G0', 'G1']:
             target = self.calculate_target(params)
             self.move_robot(*target)
-
+            
     def calculate_target(self, params):
         next_pos = self.pos.copy()
         
@@ -138,30 +152,19 @@ class GCodeVirtualMachine(Node):
                     val_meters = val * self.unit_scale
                 else:
                     val_meters = val # Angles are radians
-
+                
                 if self.mode == 'REL':
                     next_pos[internal_key] += val_meters
                 else:
                     next_pos[internal_key] = val_meters
-
+                    
         return (next_pos['X'], next_pos['Y'], next_pos['Z'], next_pos['A'], next_pos['C'])
 
     def move_robot(self, x, y, z, a, c):
-        dx = x - self.pos['X']
-        dy = y - self.pos['Y']
-        dz = z - self.pos['Z']
-        dist = math.sqrt(dx**2 + dy**2 + dz**2)
+        # Update Internal State
+        self.pos = {'X': x, 'Y': y, 'Z': z, 'A': a, 'C': c}
         
-        # Use simple Factor to allow smooth continuous motion
-        # If we sleep EXACTLY the time, rounding errors might cause stutter
-        # 0.8 means we send the next command when 80% of the way there, creating a blend
-        BLEND_FACTOR = 1.0
-        
-        if dist > 0.0001:
-            wait_time = (dist / self.robot_speed) * BLEND_FACTOR
-        else:
-            wait_time = 0.05
-            
+        # Create Pose Msg
         msg = Pose()
         msg.position.x = float(x)
         msg.position.y = float(y)
@@ -174,25 +177,26 @@ class GCodeVirtualMachine(Node):
         msg.orientation.w = q[3]
         
         self.publisher_.publish(msg)
-        self.get_logger().info(f"Move: X{x:.3f} Y{y:.3f} Z{z:.3f} (T={wait_time:.2f}s, V={self.robot_speed:.3f})")
+        self.get_logger().info(f"Target Sent: {x:.3f}, {y:.3f}, {z:.3f}")
         
-        self.pos['X'] = x
-        self.pos['Y'] = y
-        self.pos['Z'] = z
-        self.pos['A'] = a
-        self.pos['C'] = c
-        
-        time.sleep(wait_time)
+        # BLOCK NEXT COMMAND until we get confirmation
+        self.waiting_for_movement = True
 
 def main(args=None):
     rclpy.init(args=args)
     if len(sys.argv) < 2:
         print("Usage: python3 delta_gcode_interpreter.py <file.gcode>")
         sys.exit(1)
-    filename = sys.argv[1]
-    node = GCodeVirtualMachine(filename)
-    node.destroy_node()
-    rclpy.shutdown()
+        
+    node = GCodeVirtualMachine(sys.argv[1])
+    
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
 
 if __name__ == '__main__':
     main()

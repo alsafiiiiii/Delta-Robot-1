@@ -30,10 +30,10 @@ static const char *TAG = "delta_c_driver";
 // --- MOTION SETTINGS ---
 // Max Speed: 500 deg/s (Fast)
 // Accel: 2000 deg/s^2 (Snappy)
-// Decel: 20000 deg/s^2 (Instant Stop)
+// Decel: 2000 deg/s^2 (Smooth Stop)
 #define TRAJ_MAX_VEL 500.0f
 #define TRAJ_ACCEL 2000.0f
-#define TRAJ_DECEL 20000.0f
+#define TRAJ_DECEL 2000.0f
 
 #define SERVO_MIN_PULSEWIDTH_US 500
 #define SERVO_MAX_PULSEWIDTH_US 2400
@@ -46,6 +46,16 @@ static const int SERVO_GPIOS[NUM_SERVOS] = {2, 4, 5};
 typedef struct {
   float angles[5];
 } delta_packet_t;
+
+// Feedback Packet (ESP32 -> PC)
+typedef struct {
+  float angles[5];
+  uint32_t timestamp_ms;
+} delta_feedback_t;
+
+// Shared Global for Feedback
+struct sockaddr_in host_addr;
+bool host_known = false;
 
 // --- GLOBALS ---
 mcpwm_cmpr_handle_t comparators[NUM_SERVOS];
@@ -89,14 +99,52 @@ static void udp_server_task(void *pvParameters) {
     struct sockaddr_in source_addr;
     socklen_t socklen = sizeof(source_addr);
 
-    int len = recvfrom(sock, &packet, sizeof(delta_packet_t), 0,
-                       (struct sockaddr *)&source_addr, &socklen);
-
     if (len == sizeof(delta_packet_t)) {
       xSemaphoreTake(target_mutex, portMAX_DELAY);
       current_target_packet = packet;
       new_data_available = true;
       xSemaphoreGive(target_mutex);
+
+      // Auto-detect host IP from incoming packet
+      if (!host_known) {
+        host_addr.sin_family = AF_INET;
+        host_addr.sin_port = htons(PORT); // Respond to same port
+        host_addr.sin_addr.s_addr = source_addr.sin_addr.s_addr;
+        host_known = true;
+        ESP_LOGI(TAG, "Host Detected: %s", inet_ntoa(source_addr.sin_addr));
+      }
+    }
+  }
+}
+
+// --- TASK 3: UDP SENDER (FEEDBACK) ---
+static void udp_sender_task(void *pvParameters) {
+  int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+  if (sock < 0) {
+    ESP_LOGE(TAG, "Sender Socket Fail");
+    vTaskDelete(NULL);
+    return;
+  }
+
+  delta_feedback_t fb_packet;
+  TickType_t xLastWakeTime = xTaskGetTickCount();
+  const TickType_t xFrequency = pdMS_TO_TICKS(50); // 20Hz Feedback
+
+  while (1) {
+    vTaskDelayUntil(&xLastWakeTime, xFrequency);
+
+    if (host_known) {
+      // Populate Feedback
+      // We read from the trajectory current pos or direct from comparator
+      // Since we don't have encoder feedback, we report the *current calculated
+      // trajectory pos*
+      for (int i = 0; i < NUM_SERVOS; i++) {
+        fb_packet.angles[i] = servo_traj[i].curPos;
+      }
+      fb_packet.timestamp_ms = (uint32_t)(esp_timer_get_time() / 1000ULL);
+
+      sendto(sock, &fb_packet, sizeof(delta_feedback_t), 0,
+             (struct sockaddr *)&host_addr, sizeof(host_addr));
     }
   }
 }
@@ -221,5 +269,6 @@ void app_main(void) {
   ESP_ERROR_CHECK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_START_NO_STOP));
 
   xTaskCreate(motion_task, "motion", 4096, NULL, 10, NULL);
-  xTaskCreate(udp_server_task, "udp", 4096, NULL, 5, NULL);
+  xTaskCreate(udp_server_task, "udp_rx", 4096, NULL, 5, NULL);
+  xTaskCreate(udp_sender_task, "udp_tx", 4096, NULL, 5, NULL);
 }
