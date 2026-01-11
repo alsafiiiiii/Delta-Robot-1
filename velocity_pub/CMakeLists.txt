@@ -51,6 +51,8 @@ install(
     scripts/joystick_controller.py
     scripts/camera_pnp.py
     scripts/delta_3dof_controller.py
+    scripts/direct_joystick_controller.py
+    scripts/star_draw_no_ros.py
     launch/four_ws_control.launch.py
     DESTINATION lib/${PROJECT_NAME}
   )
