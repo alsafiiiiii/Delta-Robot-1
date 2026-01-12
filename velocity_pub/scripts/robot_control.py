@@ -7,7 +7,7 @@ from rclpy.node import Node
 from trajectory_msgs.msg import JointTrajectory
 
 # --- CONFIGURATION ---
-ESP_IP = "10.52.82.11"
+ESP_IP = "10.248.215.11"
 ESP_PORT = 3333
 
 class DeltaHardwareBridge(Node):
