@@ -4,7 +4,7 @@ import struct
 import numpy as np
 import rclpy
 from rclpy.node import Node
-from trajectory_msgs.msg import JointTrajectory
+from geometry_msgs.msg import Point
 
 # --- CONFIGURATION ---
 ESP_IP = "10.248.215.11"
@@ -19,28 +19,23 @@ class DeltaHardwareBridge(Node):
         self.packet_count = 0 
 
         self.subscription = self.create_subscription(
-            JointTrajectory,
-            '/model/delta_robot/joint_trajectory',
+            Point,
+            '/delta/reference_point',
             self.listener_callback,
             10
         )
         self.get_logger().info(f"✅ Bridge Ready. Target: {ESP_IP}:{ESP_PORT}")
 
     def listener_callback(self, msg):
-        if not msg.points: return
         try:
-            rads = msg.points[0].positions
-            angles_deg = np.rad2deg(rads[:5])
-            angles_deg = np.clip(angles_deg, 0, 180)
-
-            packet = struct.pack('<fffff', *angles_deg)
+            # Prepare (X, Y, Z) packet
+            packet = struct.pack('<fff', msg.x, msg.y, msg.z)
             self.sock.sendto(packet, self.esp_addr)
             
-            # --- LOGGING EVERY PACKET ---
-            # This lets you see the exact angles being sent in real-time
-            self.get_logger().info(
-                f"TX: {angles_deg[0]:6.2f} | {angles_deg[1]:6.2f} | {angles_deg[2]:6.2f}"
-            )
+            # --- LOGGING ---
+            # self.get_logger().info(f"TX: {msg.x:.4f} | {msg.y:.4f} | {msg.z:.4f}") 
+            # (Commented out to reduce spam, uncomment for debug)
+
 
         except Exception as e:
             self.get_logger().error(f"Bridge Error: {e}")

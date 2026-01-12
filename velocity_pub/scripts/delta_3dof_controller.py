@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import Pose, Twist
+from geometry_msgs.msg import Pose, Twist, Point
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from builtin_interfaces.msg import Duration
 import numpy as np
@@ -47,6 +47,7 @@ class SmoothDeltaController(Node):
         self.is_moving = False
 
         self.joint_pub = self.create_publisher(JointTrajectory, '/model/delta_robot/joint_trajectory', 10)
+        self.point_pub = self.create_publisher(Point, '/delta/reference_point', 10)
         self.pose_sub = self.create_subscription(Pose, '/delta/target_pose', self.new_target_callback, 10)
         self.speed_sub = self.create_subscription(Twist, '/delta/speed_params', self.speed_callback, 10)
         
@@ -107,6 +108,13 @@ class SmoothDeltaController(Node):
             point.time_from_start = Duration(sec=0, nanosec=int(self.dt * 1e9)) 
             msg.points.append(point)
             self.joint_pub.publish(msg)
+            
+            # Publish Cartesian Point for ESP32
+            p_msg = Point()
+            p_msg.x = float(self.current_pos[0])
+            p_msg.y = float(self.current_pos[1])
+            p_msg.z = float(self.current_pos[2])
+            self.point_pub.publish(p_msg)
         except Exception as e:
             self.get_logger().warn(f"IK Error: {e}")
 

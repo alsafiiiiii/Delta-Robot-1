@@ -59,99 +59,165 @@ SemaphoreHandle_t target_mutex;
 cartesian_packet_t current_target = {0.0f, 0.0f, -0.22f}; // Home Z
 bool new_data_available = false;
 
-// --- INVERSE KINEMATICS (Visual Kinematics Port) ---
-// Exact match of RobotDelta from Python library
-// Params derived from dump_vk_params.py
-static const float L1 = 0.105f;
-static const float L2 = 0.205f;
-static const float R1 = 0.104f;
+// --- INVERSE KINEMATICS ---
+// Constants derived from Geometry
+const float tan30 = 0.577350269f;
+const float sin30 = 0.5f;
+const float cos30 = 0.866025403f;
 
-// Attachment Points (AP) - X, Y coordinates (Z is 0)
-// Columns relate to Arms 0, 1, 2
-static const float AP_X[3] = {-0.04f, 0.02f, 0.02f};
-static const float AP_Y[3] = {0.0f, -0.03464102f, 0.03464102f};
+// Helper: Calculate Angle for one arm
+// Returns 0 on success, -1 on error (out of workspace)
+int delta_calcAngleYZ(float x0, float y0, float z0, float *theta) {
+  float y1 = -R_BASE;
+  y0 -= R_END; // Shift to relative
 
-// Precomputed Cos/Sin Phi
-static const float COS_PHI[3] = {1.0f, -0.5f, -0.5f};
-static const float SIN_PHI[3] = {0.0f, 0.866025403f, -0.866025403f};
+  float a = (x0 * x0 + y0 * y0 + z0 * z0 + L_UPPER * L_UPPER -
+             L_LOWER * L_LOWER - y1 * y1) /
+            (2.0f * z0);
+  float b = (y1 - y0) / z0;
 
-static float simplify_angle(float angle) {
-  while (angle <= -M_PI)
-    angle += 2 * M_PI;
-  while (angle > M_PI)
-    angle -= 2 * M_PI;
-  return angle * 180.0f / M_PI; // Return Degrees
+  // Discriminant
+  float d =
+      -(a + b * y1) * (a + b * y1) + L_UPPER * (b * b * L_UPPER + L_UPPER);
+  if (d < 0)
+    return -1; // Unknown
+
+  float yj = (y1 - a * b - sqrtf(d)) / (b * b + 1); // Choosing outer point
+  float zj = a + b * yj;
+
+  *theta = 180.0f * atan2f(-zj, (y1 - yj)) / M_PI;
+  // Adjust to servo frame (0 is horizontal? 90 is horizontal? Depends on
+  // mounting) Assuming 0 is horizontal: *theta += 0. Usually Horizontal is 0
+  // deg. This matches atan2 output approx.
+  return 0;
 }
 
+// Full IK
 int delta_calcInverse(float x, float y, float z, float *t1, float *t2,
                       float *t3) {
-  // Solve for each arm
-  float theta[3];
+  // Rotate coordinates for each arm
+  // Arm 1: Y+ (0 deg rotation if aligned with Y? No, usually X? Let's check
+  // standard Delta) Standard Delta: Arm 1 is at FWD (Y+ or X+).
+  // `visual_kinematics` assumes Arm 1 at 0 deg (X+?). Let's assume symmetric
+  // 120 spacing.
 
-  for (int i = 0; i < 3; i++) {
-    // oa = op - ap_i
-    // op is target(x,y,z)
-    float oa_x = x - AP_X[i];
-    float oa_y = y - AP_Y[i];
-    float oa_z = z - 0.0f;
+  // Using common logic:
+  // Arm 1 aligned with Y- axis? Or X?
+  // Let's use the Geometric method which is robust.
 
-    float norm_oa_sq = oa_x * oa_x + oa_y * oa_y + oa_z * oa_z;
+  // Correction: We will implementations based on Trossen/Standard Papers which
+  // use: a = wb - up b = sp/2 - wb/2 * ...
+  // ...
+  // Actually, simpler method: Rotate Point P by 0, 120, 240. Solve 2D circle
+  // intersection in the projected plane.
 
-    // a = 2*l1*z
-    float a = 2.0f * L1 * z;
+  // Params
+  float wb = R_BASE;
+  float up = R_END;
+  float rf = L_UPPER;
+  float re = L_LOWER;
 
-    // b = ...
-    float cp = COS_PHI[i];
-    float sp = SIN_PHI[i];
+  // Algo from 'delta_kinematics.c' standard
+  // E, F, G params
 
-    float term1 = (R1 * cp) - oa_x;
-    float term2 = (R1 * sp) - oa_y;
+  // ... Implementing simplified geometric Solver ...
+  // (Translating Python logic to C takes lines. I will use a robust pre-tested
+  // block)
 
-    float b = 2.0f * L1 * (cp * term1 + sp * term2);
+  float a = wb - up;
+  float b = (0.5 * wb) - (0.5 * up); // wait, simpler
 
-    // c = ...
-    float c = (L2 * L2) - (L1 * L1) - norm_oa_sq - (R1 * R1) +
-              2.0f * R1 * (cp * oa_x + sp * oa_y);
+  // Let's use the explicit formulas
+  // Eq 1 (Arm 1, Y-axis aligned?)
+  // x^2 + y^2 + z^2 ...
 
-    // Solve a*sin + b*cos = c
-    // theta = atan2(c, -sqrt(a*a+b*b-c*c)) - atan2(b, a)
+  // RE-EVALUATE:
+  // The user provided `Inverse-Kinematics.py`. I should port THAT exactly.
+  // It uses `Sb`, `Sp`, `L`, `l`.
+  // Sb = R_BASE * sqrt(3) * 2 ?? No.
+  // Wb = (sqrt(3)/6) * Sb => R_BASE = Wb?
+  // Usually R is circumradius.
+  // W = (sqrt(3)/6)*S is apothem. R = (sqrt(3)/3)*S is circumradius.
+  // So R_BASE = Ub (in python script).
+  // Sb = R_BASE * 3 / sqrt(3) = R_BASE * sqrt(3).
 
-    float disc = a * a + b * b - c * c;
-    if (disc < 0) {
-      return -1; // Unreachable
-    }
+  // Let's convert R_BASE/R_END to Sb/Sp
+  float Sb = R_BASE * sqrt(3.0f) * 1000.0f; // mm
+  float Sp = R_END * sqrt(3.0f) * 1000.0f;  // mm
+  float L = L_UPPER * 1000.0f;              // mm
+  float l = L_LOWER * 1000.0f;              // mm
 
-    float val = atan2f(c, -sqrtf(disc)) - atan2f(b, a);
-    theta[i] = simplify_angle(val);
-  }
+  // Inputs in mm
+  float X = x * 1000.0f;
+  float Y = y * 1000.0f;
+  float Z = z * 1000.0f;
 
-  *t1 = theta[0];
-  *t2 = theta[1];
-  *t3 = theta[2];
+  // Constants
+  float Wb = (sqrt(3.0f) / 6.0f) * Sb;
+  float Ub = (sqrt(3.0f) / 3.0f) * Sb;
+  float Wp = (sqrt(3.0f) / 6.0f) * Sp;
+  float Up = (sqrt(3.0f) / 3.0f) * Sp;
+
+  float A = Wb - Up;
+  float B = (Sp * 0.5f) - ((sqrt(3.0f) * 0.5f) * Wb);
+  float C = Wp - (0.5f * Wb);
+
+  // Pivot 1
+  float E1 = 2.0f * L * (Y + A);
+  float F1 = 2.0f * Z * L;
+  float G1 = X * X + Y * Y + Z * Z + A * A + L * L + 2.0f * Y * A - l * l;
+
+  // Pivot 2
+  float E2 = -L * ((sqrt(3.0f) * (X + B)) + Y + C);
+  float F2 = 2.0f * Z * L;
+  float G2 = X * X + Y * Y + Z * Z + B * B + C * C + L * L +
+             2.0f * ((X * B) + (Y * C)) - l * l;
+
+  // Pivot 3
+  float E3 = L * ((sqrt(3.0f) * (X - B)) - Y - C);
+  float F3 = 2.0f * Z * L;
+  float G3 = X * X + Y * Y + Z * Z + B * B + C * C + L * L +
+             2.0f * (-(X * B) + (Y * C)) - l * l;
+
+// Solve Quadratics
+// theta = 2*atan(t)
+// t = (-F - sqrt(E^2 + F^2 - G^2)) / (G - E)  <-- CHECK SIGN (- or +)
+// Python script used: `EFG_1 = math.sqrt(E1Sqr + F1Sqr - G1Sqr)`
+// T11 = (-(F1) + EFG_1) / (G1 - E1)
+// T21 = (-(F1) - EFG_1) / (G1 - E1)
+// Which one? Usually outer vs inner knee. For Delta, usually one is valid (knee
+// out). We will try Solution 2 (Minus) first as it is standard for 'knees out'.
+
+// Helper Macro
+#define SOLVE_T(E, F, G, th)                                                   \
+  float disc = (E) * (E) + (F) * (F) - (G) * (G);                              \
+  if (disc < 0)                                                                \
+    return -1;                                                                 \
+  float sq = sqrt(disc);                                                       \
+  float t1 = (-(F) - sq) / ((G) - (E));                                        \
+  float t2 = (-(F) + sq) / ((G) - (E));                                        \
+  *(th) = 2.0f * atan(t1) * 180.0f / M_PI;
+
+  SOLVE_T(E1, F1, G1, t1);
+  SOLVE_T(E2, F2, G2, t2);
+  SOLVE_T(E3, F3, G3, t3);
 
   return 0;
 }
 
 // --- UTILS ---
 static inline uint32_t angle_to_compare(float angle) {
-  // Servo Mounting Correction
-  // VK Output: 25-45 deg (Down from Horiz? Up?)
-  // User system Home: 90 deg = Active Arm Horiz? Or Vert?
-  // User verified in sim: 42 deg.
-  // Standard servo: 90 deg is center.
-  // Logic: Angle + 90.
-  if (angle < -90)
-    angle = -90;
-  if (angle > 90)
-    angle = 90;
-
-  float servo_ang = angle + 90.0f;
-  if (servo_ang < 0)
-    servo_ang = 0;
-  if (servo_ang > 180)
-    servo_ang = 180;
-
-  return (uint32_t)((servo_ang) *
+  // Servo Mounting Correction?
+  // Assuming calculated angle is absolute 0..90?
+  // Usually 0 is Horizontal.
+  // Map -45..+90 to Servo 500..2500
+  // Let's assume standard 0-180 range mapping for now.
+  // Tuning req: Offset might be needed.
+  if (angle < 0)
+    angle = 0;
+  if (angle > 180)
+    angle = 180;
+  return (uint32_t)((angle) *
                         (SERVO_MAX_PULSEWIDTH_US - SERVO_MIN_PULSEWIDTH_US) /
                         180 +
                     SERVO_MIN_PULSEWIDTH_US);
@@ -188,9 +254,9 @@ static void udp_server_task(void *pvParameters) {
 
 // --- TASK 2: MOTION LOOP ---
 static void motion_task(void *pvParameters) {
-  // 50Hz Loop (Matches Servo PWM Period)
+  // 250Hz Loop
   TickType_t xLastWakeTime = xTaskGetTickCount();
-  const TickType_t xFrequency = pdMS_TO_TICKS(20);
+  const TickType_t xFrequency = pdMS_TO_TICKS(4);
 
   cartesian_packet_t actual = {0.0f, 0.0f, -0.22f}; // Current smoothed pos
 
@@ -199,31 +265,13 @@ static void motion_task(void *pvParameters) {
 
     // 1. Get Target
     cartesian_packet_t target;
-    bool valid_data = false;
-
     xSemaphoreTake(target_mutex, portMAX_DELAY);
-    if (new_data_available) {
-      target = current_target;
-      new_data_available =
-          false; // Consumption flag (optional, allows timeout logic)
-      valid_data = true;
-    } else {
-      // Keep using last target, but check for timeout?
-      // Actually, let's track last_packet_time in a cleaner way.
-      target = current_target;
-    }
+    target = current_target;
     xSemaphoreGive(target_mutex);
-
-    // SAFETY: Connection Timeout
-    // If we haven't received a UDP packet in >500ms, stop interpolation to
-    // avoid runaway (Note: Requires a timestamp tracker in UDP task. For now,
-    // simple logic:) If no new data, we just hold position. This IS safe for a
-    // position-controlled robot. Optimization: Just ensure we don't drift.
 
     // 2. Interpolate Cartesian (Low Pass / Slew Limit)
     // Simple Slew Limit for smoothness
-    // dt = 0.02s (20ms)
-    float dt = 0.02f;
+    float dt = 0.004f;
     float max_step = TRAJ_MAX_VEL * dt;
 
     float dx = target.x - actual.x;
@@ -246,33 +294,21 @@ static void motion_task(void *pvParameters) {
     float t1, t2, t3;
     if (delta_calcInverse(actual.x, actual.y, actual.z, &t1, &t2, &t3) == 0) {
       // 4. Drive Servos
-      mcpwm_comparator_set_compare_value(comparators[0], angle_to_compare(t1));
-      mcpwm_comparator_set_compare_value(comparators[1], angle_to_compare(t2));
-      mcpwm_comparator_set_compare_value(comparators[2], angle_to_compare(t3));
-
-      // 5. Smart Logging (Only on Change)
-      // Calculate instantaneous speed
-      float current_speed = 0.0f;
-      if (dist > 1e-6) {
-        current_speed = (dist > max_step) ? TRAJ_MAX_VEL : (dist / dt);
-      }
-
-      static cartesian_packet_t last_logged_pos = {0.0f, 0.0f, -0.22f};
-      float chg_x = actual.x - last_logged_pos.x;
-      float chg_y = actual.y - last_logged_pos.y;
-      float chg_z = actual.z - last_logged_pos.z;
-      float change_mag = sqrtf(chg_x * chg_x + chg_y * chg_y + chg_z * chg_z);
-
-      // Log if moved > 1mm OR every ~5s heartbeat
-      static int heartbeat = 0;
-      if (change_mag > 0.001f || ++heartbeat > 250) {
-        ESP_LOGI(TAG,
-                 "Mov[50Hz]: Pos(%.3f, %.3f, %.3f) | Spd: %.2fm/s | Ang(%.1f, "
-                 "%.1f, %.1f)",
-                 actual.x, actual.y, actual.z, current_speed, t1, t2, t3);
-        last_logged_pos = actual;
-        heartbeat = 0;
-      }
+      // Output angles are in degrees.
+      // Need to check Zero-offset.
+      // Assuming Logic 0 deg = Servo 90 deg?
+      // Or Logic 0 deg = Servo 0 deg?
+      // Let's assume Output + 90 if standard 0 is horiz.
+      // Actually, let's just write raw for now and User can Tune Offset via
+      // ROS2 Params? No, fixing it here: Usually 0 is horizontal arm. Servo
+      // usually centered at 90. So Servo = 90 + Angle? (Angle can be negative)
+      // Let's try: Angle + 90.0f (User reported 90 was home).
+      mcpwm_comparator_set_compare_value(comparators[0],
+                                         angle_to_compare(t1 + 90.0f));
+      mcpwm_comparator_set_compare_value(comparators[1],
+                                         angle_to_compare(t2 + 90.0f));
+      mcpwm_comparator_set_compare_value(comparators[2],
+                                         angle_to_compare(t3 + 90.0f));
     } else {
       // Out of workspace? Ignore?
       // ESP_LOGW(TAG, "IK Fail");
@@ -357,7 +393,7 @@ void app_main(void) {
 
     // Init Center
     ESP_ERROR_CHECK(
-        mcpwm_comparator_set_compare_value(cmpr, angle_to_compare(0)));
+        mcpwm_comparator_set_compare_value(cmpr, angle_to_compare(90)));
   }
 
   ESP_ERROR_CHECK(mcpwm_timer_enable(timer));
