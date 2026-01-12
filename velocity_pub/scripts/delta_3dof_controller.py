@@ -111,14 +111,10 @@ class SmoothDeltaController(Node):
         self.use_sim = self.get_parameter('use_sim').value
 
         # Robot Parameters [SB, WB, UP, WP] => [R_Base, R_EE, L1, L2]
-        if self.use_sim:
-            # Simulation Parameters (Provided by User)
-            self.get_logger().info("Configuring Kinematics for SIMULATION")
-            self.robot = RobotDelta(np.array([0.0758, 0.035, 0.075, 0.2639]))
-        else:
-            # Hardware Parameters (Existing)
-            self.get_logger().info("Configuring Kinematics for HARDWARE")
-            self.robot = RobotDelta(np.array([0.104, 0.040, 0.105, 0.205])) 
+        # Simulation Parameters (Provided by User)
+        #self.robot = RobotDelta(np.array([0.0758, 0.035, 0.075, 0.2639]))
+        # Hardware Parameters (Existing)
+        self.robot = RobotDelta(np.array([0.104, 0.040, 0.105, 0.205])) 
 
         if self.use_sim:
             # Gazebo Feedback
@@ -206,6 +202,9 @@ class SmoothDeltaController(Node):
              
              # Publish immediately
              self.solve_and_publish(self.target_pos[0], self.target_pos[1], self.target_pos[2])
+             
+             # Signal Done (so GCode doesn't hang on small moves)
+             self.done_pub.publish(Bool(data=True))
              return
 
         # 4. Reset/Setup Profile (For Standard Moves)

@@ -118,13 +118,12 @@ class JoystickController(Node):
         
         self.pose_pub.publish(msg)
 
-        # Publish Speed Params
-        # Force high speed so the controller tries to catch up instantly
-        # Whatever speed we integrated is the 'profle' essentially
+        # Publish Speed Params (Optional, mainly for GCode/Auto moves)
+        # For Teleop, we rely on the controller's bypass logic
         speed_msg = Twist()
-        speed_msg.linear.x = 1.0 # High limit allow fast catchup
-        speed_msg.linear.y = 5.0 # High Accel
-        speed_msg.linear.z = 5.0 # High Decel
+        speed_msg.linear.x = 0.2 # Default run speed
+        speed_msg.linear.y = 1.0 # Default Accel
+        speed_msg.linear.z = 1.0 # Default Decel
         self.speed_pub.publish(speed_msg)
 
 def main(args=None):

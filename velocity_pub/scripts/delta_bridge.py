@@ -11,8 +11,7 @@ import time
 import numpy as np
 
 # Configuration
-ESP_IP = "10.52.82.11"
-ESP_PORT = 3333
+# Configuration
 RX_BUFFER_SIZE = 1024
 
 class DeltaBridge(Node):
@@ -20,6 +19,13 @@ class DeltaBridge(Node):
         super().__init__('delta_bridge')
         
         # --- ROS2 Interfaces ---
+        self.declare_parameter('esp_ip', "10.248.215.11")
+        self.declare_parameter('esp_port', 3333)
+        
+        self.target_ip = self.get_parameter('esp_ip').value
+        self.target_port = self.get_parameter('esp_port').value
+        self.esp_addr = (self.target_ip, self.target_port)
+
         self.sub_traj = self.create_subscription(
             JointTrajectory, 
             '/model/delta_robot/joint_trajectory', 
@@ -34,7 +40,6 @@ class DeltaBridge(Node):
         # --- UDP Socket ---
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.settimeout(0.1) # Non-blocking for receive loop
-        self.esp_addr = (ESP_IP, ESP_PORT)
         
         # State
         self.last_feedback_time = 0
@@ -45,7 +50,7 @@ class DeltaBridge(Node):
         self.rx_thread = threading.Thread(target=self.receive_loop)
         self.rx_thread.start()
         
-        self.get_logger().info(f"Bridge Started. Target: {ESP_IP}:{ESP_PORT}")
+        self.get_logger().info(f"Bridge Started. Target: {self.target_ip}:{self.target_port}")
 
     def trajectory_callback(self, msg):
         if not msg.points: return
@@ -70,6 +75,9 @@ class DeltaBridge(Node):
             packet = struct.pack('<fffff', *payload)
             self.sock.sendto(packet, self.esp_addr)
             
+            # Debug Log (Throttled)
+            self.get_logger().info(f"TX -> {self.target_ip}: {payload}", throttle_duration_sec=2.0)
+            
         except Exception as e:
             self.get_logger().error(f"TX Error: {e}")
 
@@ -81,7 +89,7 @@ class DeltaBridge(Node):
                 data, addr = self.sock.recvfrom(RX_BUFFER_SIZE)
                 
                 # Check source
-                if addr[0] != ESP_IP: continue
+                if addr[0] != self.target_ip: continue
                 
                 # Parse Feedback: 5 floats + 1 uint32 (timestamp)
                 # Matches `delta_feedback_t` in main5.c
