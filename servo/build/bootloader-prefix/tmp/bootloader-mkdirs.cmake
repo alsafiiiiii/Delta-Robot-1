@@ -10,18 +10,18 @@ if(NOT EXISTS "/home/rikisu/esp/v5.4.1/esp-idf/components/bootloader/subproject"
   file(MAKE_DIRECTORY "/home/rikisu/esp/v5.4.1/esp-idf/components/bootloader/subproject")
 endif()
 file(MAKE_DIRECTORY
-  "/home/rikisu/Documents/Projects/ESPIDF/servo/build/bootloader"
-  "/home/rikisu/Documents/Projects/ESPIDF/servo/build/bootloader-prefix"
-  "/home/rikisu/Documents/Projects/ESPIDF/servo/build/bootloader-prefix/tmp"
-  "/home/rikisu/Documents/Projects/ESPIDF/servo/build/bootloader-prefix/src/bootloader-stamp"
-  "/home/rikisu/Documents/Projects/ESPIDF/servo/build/bootloader-prefix/src"
-  "/home/rikisu/Documents/Projects/ESPIDF/servo/build/bootloader-prefix/src/bootloader-stamp"
+  "/home/rikisu/major_project_ws/src/servo/build/bootloader"
+  "/home/rikisu/major_project_ws/src/servo/build/bootloader-prefix"
+  "/home/rikisu/major_project_ws/src/servo/build/bootloader-prefix/tmp"
+  "/home/rikisu/major_project_ws/src/servo/build/bootloader-prefix/src/bootloader-stamp"
+  "/home/rikisu/major_project_ws/src/servo/build/bootloader-prefix/src"
+  "/home/rikisu/major_project_ws/src/servo/build/bootloader-prefix/src/bootloader-stamp"
 )
 
 set(configSubDirs )
 foreach(subDir IN LISTS configSubDirs)
-    file(MAKE_DIRECTORY "/home/rikisu/Documents/Projects/ESPIDF/servo/build/bootloader-prefix/src/bootloader-stamp/${subDir}")
+    file(MAKE_DIRECTORY "/home/rikisu/major_project_ws/src/servo/build/bootloader-prefix/src/bootloader-stamp/${subDir}")
 endforeach()
 if(cfgdir)
-  file(MAKE_DIRECTORY "/home/rikisu/Documents/Projects/ESPIDF/servo/build/bootloader-prefix/src/bootloader-stamp${cfgdir}") # cfgdir has leading slash
+  file(MAKE_DIRECTORY "/home/rikisu/major_project_ws/src/servo/build/bootloader-prefix/src/bootloader-stamp${cfgdir}") # cfgdir has leading slash
 endif()

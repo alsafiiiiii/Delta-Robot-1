@@ -18,8 +18,8 @@ end
 
 # Load bootloader symbols
 set confirm off
-    add-symbol-file /home/rikisu/Documents/Projects/ESPIDF/servo/build/bootloader/bootloader.elf
+    add-symbol-file /home/rikisu/major_project_ws/src/servo/build/bootloader/bootloader.elf
 set confirm on
 
 # Load application symbols
-file /home/rikisu/Documents/Projects/ESPIDF/servo/build/servo.elf
+file /home/rikisu/major_project_ws/src/servo/build/servo.elf

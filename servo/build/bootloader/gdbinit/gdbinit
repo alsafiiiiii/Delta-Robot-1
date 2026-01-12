@@ -1,2 +1,2 @@
-source /home/rikisu/Documents/Projects/ESPIDF/servo/build/bootloader/gdbinit/symbols
-source /home/rikisu/Documents/Projects/ESPIDF/servo/build/bootloader/gdbinit/connect
+source /home/rikisu/major_project_ws/src/servo/build/bootloader/gdbinit/symbols
+source /home/rikisu/major_project_ws/src/servo/build/bootloader/gdbinit/connect

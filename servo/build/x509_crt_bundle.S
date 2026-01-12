@@ -1,4 +1,4 @@
-/* * Data converted from /home/rikisu/Documents/Projects/ESPIDF/servo/build/esp-idf/mbedtls/x509_crt_bundle
+/* * Data converted from /home/rikisu/major_project_ws/src/servo/build/esp-idf/mbedtls/x509_crt_bundle
  */
 .data
 #if !defined (__APPLE__) && !defined (__linux__)

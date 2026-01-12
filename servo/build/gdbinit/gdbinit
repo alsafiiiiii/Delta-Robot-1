@@ -1,2 +1,2 @@
-source /home/rikisu/Documents/Projects/ESPIDF/servo/build/gdbinit/symbols
-source /home/rikisu/Documents/Projects/ESPIDF/servo/build/gdbinit/connect
+source /home/rikisu/major_project_ws/src/servo/build/gdbinit/symbols
+source /home/rikisu/major_project_ws/src/servo/build/gdbinit/connect
