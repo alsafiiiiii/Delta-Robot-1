@@ -30,7 +30,7 @@ class GCodeVirtualMachine(Node):
         self.speed_pub_ = self.create_publisher(Twist, '/delta/speed_params', 10)
         
         # --- Robot Settings ---
-        self.robot_speed = 0.05  # m/s (Default)
+        self.robot_speed = 0.5  # m/s - MUST match controller linear_speed
         
         # --- Virtual Machine State ---
         self.mode = 'ABS'         # 'ABS' (G90) or 'REL' (G91)
@@ -53,6 +53,9 @@ class GCodeVirtualMachine(Node):
         try:
             while rclpy.ok():
                 self.get_logger().info(f"Parsing file: {self.filename}")
+                
+                # Reset position at start of each loop for consistent timing
+                self.pos = {'X': 0.0, 'Y': 0.0, 'Z': -0.25, 'A': 0.0, 'C': 0.0}
                 
                 if not os.path.exists(self.filename):
                     self.get_logger().error(f"File not found: {self.filename}")
@@ -155,7 +158,7 @@ class GCodeVirtualMachine(Node):
         # Use simple Factor to allow smooth continuous motion
         # If we sleep EXACTLY the time, rounding errors might cause stutter
         # 0.8 means we send the next command when 80% of the way there, creating a blend
-        BLEND_FACTOR = 0.9
+        BLEND_FACTOR = 1.0
         
         if dist > 0.0001:
             wait_time = (dist / self.robot_speed) * BLEND_FACTOR

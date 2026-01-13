@@ -229,7 +229,7 @@ static void motion_task(void *pvParameters) {
 
     // 2. Interpolate (Linear or Joint)
     // dt = 0.02s (20ms)
-    float dt = 0.02f;
+    float dt = 0.002f;
     float max_step = TRAJ_MAX_VEL * dt;
     float dist = 0.0f; // Shared for logging
 
@@ -251,7 +251,7 @@ static void motion_task(void *pvParameters) {
       ESP_LOGI(TAG, "EMA Reset (jump: %.3fm)", jump_dist);
     }
 
-    float in_alpha = 1.0f; // Low lag (Faster response to UDP targets)
+    float in_alpha = 0.6f; // Low lag (Faster response to UDP targets)
 
     if (target.mode == 0) {
       // Linear Mode: Smooth the input coords

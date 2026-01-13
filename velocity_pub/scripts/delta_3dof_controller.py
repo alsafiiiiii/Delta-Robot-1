@@ -27,9 +27,9 @@ class SmoothDeltaController(Node):
         super().__init__('smooth_delta_controller')
         
         # --- CONFIGURATION ---
-        self.loop_rate = 50.0  
+        self.loop_rate = 50.0  # MUST match ESP32 (50Hz)
         self.dt = 1.0 / self.loop_rate
-        self.linear_speed = 0.05  
+        self.linear_speed = 0.5  # m/s - Near servo max @ 5V (~0.6 m/s limit)
         self.angular_speed = 1.0  
         
         # --- SAFETY SETTINGS ---
@@ -45,22 +45,23 @@ class SmoothDeltaController(Node):
         self.target_tilt = 0.0
         self.target_spin = 0.0
         self.is_moving = False
+        self.current_speed = 0.0  # For trapezoidal velocity ramp
 
         self.joint_pub = self.create_publisher(JointTrajectory, '/model/delta_robot/joint_trajectory', 10)
         self.point_pub = self.create_publisher(Point, '/delta/reference_point', 10)
         self.pose_sub = self.create_subscription(Pose, '/delta/target_pose', self.new_target_callback, 10)
         self.speed_sub = self.create_subscription(Twist, '/delta/speed_params', self.speed_callback, 10)
         
-        self.last_time = self.get_clock().now()
+        # Timer runs EVERY 20ms (50Hz) - ALWAYS publishes
         self.timer = self.create_timer(self.dt, self.control_loop)
-        self.get_logger().info('Smooth Controller Started (Wrist Only Mode).')
+        self.get_logger().info(f'Smooth Controller Started at {self.loop_rate}Hz (Guaranteed Output Rate)')
 
     def new_target_callback(self, msg):
-        # The 3DOF controller does not have tool offset compensation logic.
-        self.target_pos = np.array([msg.position.x, msg.position.y, msg.position.z])
-        # Enforce vertical tool orientation
-        self.target_tilt = 0.0
-        self.target_spin = 0.0
+        new_target = np.array([msg.position.x, msg.position.y, msg.position.z])
+        
+        # Always update target - BLEND motion continues at current speed
+        # (Don't reset current_speed - that causes jerk at transitions)
+        self.target_pos = new_target
         self.is_moving = True
 
     def speed_callback(self, msg):
@@ -68,29 +69,41 @@ class SmoothDeltaController(Node):
         self.angular_speed = msg.angular.z
 
     def control_loop(self):
-        now = self.get_clock().now()
-        dt_duration = now - self.last_time
-        dt = dt_duration.nanoseconds / 1e9
-        self.last_time = now
+        # ALWAYS execute at 50Hz - no conditional publishing
         
-        # Clamp dt to avoid huge jumps if lag spike
-        if dt > 0.1: dt = 0.1
-        
-        if not self.is_moving:
-            self.solve_and_publish()
-            return
-
-        pos_error = self.target_pos - self.current_pos
-        dist = np.linalg.norm(pos_error)
-        step_dist = self.linear_speed * dt
-        step_ang = self.angular_speed * dt
-        
-        if dist > step_dist:
-            self.current_pos += (pos_error / dist) * step_dist
-        else:
-            self.current_pos = np.copy(self.target_pos)
-            self.is_moving = False
+        if self.is_moving:
+            pos_error = self.target_pos - self.current_pos
+            dist = np.linalg.norm(pos_error)
             
+            # --- TRAPEZOIDAL VELOCITY PROFILE ---
+            # Ramp speed up/down instead of instant max speed
+            accel = 2.0  # m/s^2 (tune this for smoothness vs responsiveness)
+            
+            # Calculate stopping distance at current speed
+            stopping_dist = (self.current_speed ** 2) / (2 * accel)
+            
+            if dist <= 0.001:
+                # Arrived
+                self.current_pos = np.copy(self.target_pos)
+                self.current_speed = 0.0
+                self.is_moving = False
+            elif dist <= stopping_dist:
+                # Decelerate (approaching target)
+                self.current_speed = max(0.01, self.current_speed - accel * self.dt)
+            elif self.current_speed < self.linear_speed:
+                # Accelerate (ramping up)
+                self.current_speed = min(self.linear_speed, self.current_speed + accel * self.dt)
+            # else: cruise at linear_speed
+            
+            step_dist = self.current_speed * self.dt
+            if dist > step_dist and dist > 0.0001:
+                self.current_pos += (pos_error / dist) * step_dist
+            else:
+                self.current_pos = np.copy(self.target_pos)
+                self.current_speed = 0.0
+                self.is_moving = False
+        
+        # PUBLISH EVERY CYCLE (50Hz guaranteed)
         self.solve_and_publish()
 
     def solve_and_publish(self):
@@ -113,7 +126,7 @@ class SmoothDeltaController(Node):
             msg.points.append(point)
             self.joint_pub.publish(msg)
             
-            # Publish Cartesian Point for ESP32
+            # Publish Cartesian Point for ESP32 (EVERY CYCLE)
             p_msg = Point()
             p_msg.x = float(self.current_pos[0])
             p_msg.y = float(self.current_pos[1])

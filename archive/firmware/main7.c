@@ -237,21 +237,12 @@ static void motion_task(void *pvParameters) {
     // Masks UDP jitter by creating a consistent "Ghost Target" to chase
     static cartesian_packet_t smoothed_target = {0.0f, 0.0f, -0.22f};
     static bool first_run = true;
-
-    // Detect large jump (controller restart or big G-code move) - reset EMA
-    float jump_dist =
-        sqrtf((target.x - smoothed_target.x) * (target.x - smoothed_target.x) +
-              (target.y - smoothed_target.y) * (target.y - smoothed_target.y) +
-              (target.z - smoothed_target.z) * (target.z - smoothed_target.z));
-
-    if (first_run || jump_dist > 0.05f) { // 50mm jump = reset
+    if (first_run) {
       smoothed_target = target;
-      actual = target; // Also reset actual position
       first_run = false;
-      ESP_LOGI(TAG, "EMA Reset (jump: %.3fm)", jump_dist);
     }
 
-    float in_alpha = 1.0f; // Low lag (Faster response to UDP targets)
+    float in_alpha = 0.6f; // Low lag (Faster response to UDP targets)
 
     if (target.mode == 0) {
       // Linear Mode: Smooth the input coords
@@ -265,10 +256,28 @@ static void motion_task(void *pvParameters) {
       smoothed_target = target; // Joint Mode: Instant
     }
 
-    // Use smoothed_target DIRECTLY (no ESP32 interpolation)
-    // Python controller handles linear interpolation at safe speed (0.15 m/s)
-    // ESP32 just executes: smooth input → IK → servo
-    actual = smoothed_target;
+    // Use smoothed_target for interpolation
+    if (target.mode == 0) {
+      // --- LINEAR MODE (Straight Line in XYZ) ---
+      float dx = smoothed_target.x - actual.x;
+      float dy = smoothed_target.y - actual.y;
+      float dz = smoothed_target.z - actual.z;
+      dist = sqrtf(dx * dx + dy * dy + dz * dz);
+
+      if (dist > max_step) {
+        float ratio = max_step / dist;
+        actual.x += dx * ratio;
+        actual.y += dy * ratio;
+        actual.z += dz * ratio;
+      } else {
+        actual.x = smoothed_target.x;
+        actual.y = smoothed_target.y;
+        actual.z = smoothed_target.z;
+      }
+    } else {
+      // --- JOINT MODE (Fast Point-to-Point) ---
+      actual = smoothed_target;
+    }
 
     // 3. Solve IK
     float t1, t2, t3;
