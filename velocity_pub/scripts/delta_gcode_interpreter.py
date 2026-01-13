@@ -155,7 +155,7 @@ class GCodeVirtualMachine(Node):
         # Use simple Factor to allow smooth continuous motion
         # If we sleep EXACTLY the time, rounding errors might cause stutter
         # 0.8 means we send the next command when 80% of the way there, creating a blend
-        BLEND_FACTOR = 1.0
+        BLEND_FACTOR = 0.9
         
         if dist > 0.0001:
             wait_time = (dist / self.robot_speed) * BLEND_FACTOR

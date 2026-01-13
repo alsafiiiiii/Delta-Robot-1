@@ -32,9 +32,15 @@ static const char *TAG = "delta_ik_driver";
 
 // --- MOTION SETTINGS ---
 // Tuned for CARTESIAN STREAMING
-#define TRAJ_MAX_VEL 0.5f // m/s (Cartesian Speed)
-#define TRAJ_ACCEL 1.0f   // m/s^2
-#define TRAJ_DECEL 1.0f   // m/s^2
+// --- MOTION SETTINGS ---
+// Tuned for CARTESIAN STREAMING
+#define TRAJ_MAX_VEL 2.0f // m/s (Let Python Controller dictate speed)
+#define TRAJ_ACCEL 5.0f   // m/s^2 (Snappier response)
+#define TRAJ_DECEL 5.0f   // m/s^2
+
+// ...
+
+// (Stray code removed)
 
 #define SERVO_MIN_PULSEWIDTH_US 500
 #define SERVO_MAX_PULSEWIDTH_US 2400
@@ -139,17 +145,17 @@ static inline uint32_t angle_to_compare(float angle) {
   // User system Home: 90 deg = Active Arm Horiz? Or Vert?
   // User verified in sim: 42 deg.
   // Standard servo: 90 deg is center.
-  // Logic: Angle + 90.
-  if (angle < -90)
-    angle = -90;
-  if (angle > 90)
-    angle = 90;
+  // User says: "Zero degrees is when its flat pointing outward"
+  // IK Output: 0 deg = Flat.
+  // Servo Input: 0 deg = Flat (500us).
+  // Logic: Direct Mapping (No Offset).
 
-  float servo_ang = angle + 90.0f;
-  if (servo_ang < 0)
-    servo_ang = 0;
-  if (servo_ang > 180)
-    servo_ang = 180;
+  float servo_ang = angle + 0.0f; // Was + 90.0f
+  // CLAMPING:
+  if (servo_ang < 0.0f)
+    servo_ang = 0.0f;
+  if (servo_ang > 180.0f)
+    servo_ang = 180.0f;
 
   return (uint32_t)((servo_ang) *
                         (SERVO_MAX_PULSEWIDTH_US - SERVO_MIN_PULSEWIDTH_US) /
@@ -245,10 +251,29 @@ static void motion_task(void *pvParameters) {
     // 3. Solve IK
     float t1, t2, t3;
     if (delta_calcInverse(actual.x, actual.y, actual.z, &t1, &t2, &t3) == 0) {
-      // 4. Drive Servos
-      mcpwm_comparator_set_compare_value(comparators[0], angle_to_compare(t1));
-      mcpwm_comparator_set_compare_value(comparators[1], angle_to_compare(t2));
-      mcpwm_comparator_set_compare_value(comparators[2], angle_to_compare(t3));
+      // 4. Drive Servos with SMOOTHING (EMA Filter)
+      static float s_t1 = 0, s_t2 = 0, s_t3 = 0;
+      static bool first_run = true;
+
+      if (first_run) {
+        s_t1 = t1;
+        s_t2 = t2;
+        s_t3 = t3;
+        first_run = false;
+      }
+
+      // Alpha: 0.2 = Very Smooth/Laggy, 1.0 = No Filter. 0.4 is balanced.
+      const float alpha = 0.4f;
+      s_t1 = (alpha * t1) + ((1.0f - alpha) * s_t1);
+      s_t2 = (alpha * t2) + ((1.0f - alpha) * s_t2);
+      s_t3 = (alpha * t3) + ((1.0f - alpha) * s_t3);
+
+      mcpwm_comparator_set_compare_value(comparators[0],
+                                         angle_to_compare(s_t1));
+      mcpwm_comparator_set_compare_value(comparators[1],
+                                         angle_to_compare(s_t2));
+      mcpwm_comparator_set_compare_value(comparators[2],
+                                         angle_to_compare(s_t3));
 
       // 5. Smart Logging (Only on Change)
       // Calculate instantaneous speed
@@ -363,6 +388,9 @@ void app_main(void) {
   ESP_ERROR_CHECK(mcpwm_timer_enable(timer));
   ESP_ERROR_CHECK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_START_NO_STOP));
 
-  xTaskCreate(motion_task, "motion", 4096, NULL, 10, NULL);
+  // Priority Boost: High (above WiFi/IP which are usually 18-23 on ESP32,
+  // but configMAX_PRIORITIES is often 25. Let's set to safe High value).
+  // Standard FreeRTOS max is often 25.
+  xTaskCreate(motion_task, "motion", 4096, NULL, 20, NULL);
   xTaskCreate(udp_server_task, "udp", 4096, NULL, 5, NULL);
 }

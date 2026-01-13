@@ -51,20 +51,16 @@ class SmoothDeltaController(Node):
         self.pose_sub = self.create_subscription(Pose, '/delta/target_pose', self.new_target_callback, 10)
         self.speed_sub = self.create_subscription(Twist, '/delta/speed_params', self.speed_callback, 10)
         
+        self.last_time = self.get_clock().now()
         self.timer = self.create_timer(self.dt, self.control_loop)
         self.get_logger().info('Smooth Controller Started (Wrist Only Mode).')
 
     def new_target_callback(self, msg):
-        
         # The 3DOF controller does not have tool offset compensation logic.
         self.target_pos = np.array([msg.position.x, msg.position.y, msg.position.z])
-        
         # Enforce vertical tool orientation
         self.target_tilt = 0.0
         self.target_spin = 0.0
-        # r, p, y = quaternion_to_euler(msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w)
-        # self.target_tilt = r
-        # self.target_spin = y
         self.is_moving = True
 
     def speed_callback(self, msg):
@@ -72,14 +68,22 @@ class SmoothDeltaController(Node):
         self.angular_speed = msg.angular.z
 
     def control_loop(self):
+        now = self.get_clock().now()
+        dt_duration = now - self.last_time
+        dt = dt_duration.nanoseconds / 1e9
+        self.last_time = now
+        
+        # Clamp dt to avoid huge jumps if lag spike
+        if dt > 0.1: dt = 0.1
+        
         if not self.is_moving:
             self.solve_and_publish()
             return
 
         pos_error = self.target_pos - self.current_pos
         dist = np.linalg.norm(pos_error)
-        step_dist = self.linear_speed * self.dt
-        step_ang = self.angular_speed * self.dt
+        step_dist = self.linear_speed * dt
+        step_ang = self.angular_speed * dt
         
         if dist > step_dist:
             self.current_pos += (pos_error / dist) * step_dist

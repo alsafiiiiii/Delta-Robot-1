@@ -41,17 +41,12 @@ install(
 install(
     PROGRAMS
     scripts/robot_control.py
-    scripts/delta_ik_controller.py         # Added
-    scripts/delta_position_test.py         # Added
-    scripts/delta_trajectory_planner.py  # NEW
-    scripts/ee_controller.py  # NEW
     scripts/delta_5dof_controller.py # NEW
     scripts/delta_gcode_interpreter.py
     scripts/gui_controller.py
     scripts/joystick_controller.py
     scripts/camera_pnp.py
     scripts/delta_3dof_controller.py
-    scripts/star_draw_no_ros.py
     launch/four_ws_control.launch.py
     DESTINATION lib/${PROJECT_NAME}
   )
