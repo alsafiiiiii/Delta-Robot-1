@@ -55,7 +55,7 @@ class GCodeVirtualMachine(Node):
                 self.get_logger().info(f"Parsing file: {self.filename}")
                 
                 # Reset position at start of each loop for consistent timing
-                self.pos = {'X': 0.0, 'Y': 0.0, 'Z': -0.25, 'A': 0.0, 'C': 0.0}
+                self.pos = {'X': 0.0, 'Y': 0.0, 'Z': -0.22, 'A': 0.0, 'C': 0.0}
                 
                 if not os.path.exists(self.filename):
                     self.get_logger().error(f"File not found: {self.filename}")

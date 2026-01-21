@@ -1,15 +1,15 @@
 /**
- * @file main8.c (ARCHIVED)
- * @brief EMA Input Smoothing + 50Hz Loop
+ * @file main9.c (ARCHIVED - BROKEN)
+ * @brief Slew Rate Limiter Attempt (Missing Declarations)
  *
- * CHANGES FROM main7.c:
- * - 50Hz motion loop (matches servo PWM period)
- * - EMA smoothing: smoothed = alpha*target + (1-alpha)*smoothed
- * - Alpha = 0.6 (fast response, moderate smoothing)
- * - Jump detection (>50mm) resets EMA filter
- * - Mode byte in packet (0=Linear, 1=Joint)
+ * CHANGES FROM main8.c:
+ * - Replaced EMA with Slew Rate Limiter (0.6 m/s max)
+ * - Linear approach to target at constant speed
+ * - Corrected dt = 0.02f
  *
- * ISSUES: dt=0.002 bug (should be 0.02). EMA can lag.
+ * BUG: Missing 'static cartesian_packet_t smoothed_target' and
+ *      'static bool first_run' declarations. WILL NOT COMPILE.
+ *      Use mcpwm_servo_control_example_main.c for fixed version.
  */
 #include "driver/mcpwm_prelude.h"
 #include "esp_event.h"
@@ -242,40 +242,41 @@ static void motion_task(void *pvParameters) {
 
     // 2. Interpolate (Linear or Joint)
     // dt = 0.02s (20ms)
-    float dt = 0.002f;
+    float dt = 0.02f;
     float max_step = TRAJ_MAX_VEL * dt;
     float dist = 0.0f; // Shared for logging
 
-    // --- INPUT SMOOTHING (Virtual Target) ---
-    // Masks UDP jitter by creating a consistent "Ghost Target" to chase
-    static cartesian_packet_t smoothed_target = {0.0f, 0.0f, -0.22f};
-    static bool first_run = true;
+    // --- SLEW RATE LIMITER (Constant Velocity Smoothing) ---
+    // Instead of EMA (curved approach), we move linearly towards target at
+    // fixed speed. This hides UDP jitter by enforcing a steady pace.
 
-    // Detect large jump (controller restart or big G-code move) - reset EMA
-    float jump_dist =
-        sqrtf((target.x - smoothed_target.x) * (target.x - smoothed_target.x) +
-              (target.y - smoothed_target.y) * (target.y - smoothed_target.y) +
-              (target.z - smoothed_target.z) * (target.z - smoothed_target.z));
+    // Servo Limit: 0.6 m/s (Do not exceed)
+    float slew_speed = 0.6f;
+    float max_slew_step = slew_speed * dt;
 
-    if (first_run || jump_dist > 0.05f) { // 50mm jump = reset
+    // Calculate vector to target
+    float dx = target.x - smoothed_target.x;
+    float dy = target.y - smoothed_target.y;
+    float dz = target.z - smoothed_target.z;
+    float dist_to_target = sqrtf(dx * dx + dy * dy + dz * dz);
+
+    // 1. Detect large jump - Reset Logic
+    if (first_run || dist_to_target > 0.05f) { // 50mm jump = reset
       smoothed_target = target;
-      actual = target; // Also reset actual position
       first_run = false;
-      ESP_LOGI(TAG, "EMA Reset (jump: %.3fm)", jump_dist);
-    }
-
-    float in_alpha = 0.6f; // Low lag (Faster response to UDP targets)
-
-    if (target.mode == 0) {
-      // Linear Mode: Smooth the input coords
-      smoothed_target.x =
-          (in_alpha * target.x) + ((1.0f - in_alpha) * smoothed_target.x);
-      smoothed_target.y =
-          (in_alpha * target.y) + ((1.0f - in_alpha) * smoothed_target.y);
-      smoothed_target.z =
-          (in_alpha * target.z) + ((1.0f - in_alpha) * smoothed_target.z);
+      ESP_LOGI(TAG, "Slew Reset (jump: %.3fm)", dist_to_target);
     } else {
-      smoothed_target = target; // Joint Mode: Instant
+      // 2. Apply Slew Rate Limit
+      if (dist_to_target > max_slew_step) {
+        // Move towards target by max_slew_step
+        float ratio = max_slew_step / dist_to_target;
+        smoothed_target.x += dx * ratio;
+        smoothed_target.y += dy * ratio;
+        smoothed_target.z += dz * ratio;
+      } else {
+        // Close enough - snap to target
+        smoothed_target = target;
+      }
     }
 
     // Use smoothed_target DIRECTLY (no ESP32 interpolation)

@@ -1,3 +1,16 @@
+/**
+ * @file main5.c (ARCHIVED)
+ * @brief Trajectory Library Integration (Per-Joint Trapezoid)
+ *
+ * CHANGES FROM main4.c:
+ * - Uses trajectory.h library for smooth motion
+ * - Per-joint trapezoidal velocity profiles
+ * - Max Vel 300 deg/s, Accel 400 deg/s^2
+ * - No buffering - stream directly to trajectory generator
+ *
+ * ISSUES: Per-joint profiles != coordinated Cartesian motion.
+ *         Arms may not all finish at the same time.
+ */
 #include "driver/mcpwm_prelude.h"
 #include "esp_event.h"
 #include "esp_log.h"

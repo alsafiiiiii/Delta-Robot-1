@@ -1,3 +1,16 @@
+/**
+ * @file main6.c (ARCHIVED)
+ * @brief On-Chip Inverse Kinematics (Cartesian Input)
+ *
+ * CHANGES FROM main5.c:
+ * - Receives (X, Y, Z) Cartesian coordinates over UDP
+ * - On-chip IK solver (delta_calcInverse)
+ * - Slew Rate Limiter for Cartesian smoothing (0.5 m/s)
+ * - 250Hz loop at 4ms tick
+ * - Servo angle offset: +90 deg (home = horizontal)
+ *
+ * ISSUES: IK math uses simplified geometry (not matching VK library).
+ */
 #include "driver/mcpwm_prelude.h"
 #include "esp_event.h"
 #include "esp_log.h"

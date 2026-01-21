@@ -32,7 +32,20 @@ class SmoothDeltaController(Node):
         self.angular_speed = 1.0  
         
         # Geometry
-        self.robot = RobotDelta(np.array([0.104, 0.040, 0.105, 0.205]))
+
+        self.r_base = 0.0758
+
+        self.r_ee = 0.035
+
+        self.l1 = 0.075
+
+        self.l2 = 0.2639
+
+        self.tool_offset = 0.033
+
+
+
+        self.robot = RobotDelta(np.array([self.r_base, self.r_ee, self.l1, self.l2]))
         self.tool_offset = 0.033
         
         # State

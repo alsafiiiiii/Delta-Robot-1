@@ -1,3 +1,15 @@
+/**
+ * @file main4.c (ARCHIVED)
+ * @brief Low-Latency "Fast Mode" with Immediate Start
+ *
+ * CHANGES FROM main3.c:
+ * - STARTUP_COUNT = 1 (Start immediately, no buffering delay)
+ * - Buffer 128 (larger to handle bursts)
+ * - Drop OLDEST on overflow (most recent data prioritized)
+ * - Buffer underrun = HOLD position (no stop)
+ *
+ * ISSUES: Still joint-angle based (no Cartesian IK).
+ */
 #include "driver/mcpwm_prelude.h"
 #include "esp_event.h"
 #include "esp_log.h"

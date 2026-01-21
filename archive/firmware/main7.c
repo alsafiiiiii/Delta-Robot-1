@@ -1,3 +1,15 @@
+/**
+ * @file main7.c (ARCHIVED)
+ * @brief Visual Kinematics-Matched IK + High Speed
+ *
+ * CHANGES FROM main6.c:
+ * - IK reimplemented to match visual_kinematics Python library
+ * - Uses AP_X, AP_Y, COS_PHI, SIN_PHI precomputed arrays
+ * - TRAJ_MAX_VEL = 3.5 m/s (high responsiveness)
+ * - Servo offset removed (0 deg = flat arm)
+ *
+ * ISSUES: Very fast, may exceed servo physical limits.
+ */
 #include "driver/mcpwm_prelude.h"
 #include "esp_event.h"
 #include "esp_log.h"

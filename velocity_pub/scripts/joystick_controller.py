@@ -1,141 +1,97 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import Joy
-from geometry_msgs.msg import Pose, Twist
-from std_msgs.msg import Empty, Bool
+from trajectory_msgs.msg import JointTrajectory
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+from collections import deque
+import math
+import threading
 
-class JoystickController(Node):
+# --- CONFIG ---
+# Match these exactly to your bridge/ESP32
+MIN_US = 500
+MAX_US = 2400
+MIN_DEG = -90.0
+MAX_DEG = 90.0
+OFFSET_DEG = 0.0 
+
+class VisualizerNode(Node):
     def __init__(self):
-        super().__init__('joystick_controller')
+        super().__init__('debug_visualizer_d2')
         
-        # --- Parameters ---
-        self.max_linear_speed = 0.08 # m/s (Fine control)
-        self.max_angular_speed = 0.5 # rad/s
+        # Buffer for plotting (Last 100 points)
+        self.maxlen = 100
+        self.t_data = deque(maxlen=self.maxlen)
+        self.y1_data = deque(maxlen=self.maxlen)
         
-        # --- State ---
-        # Initial position (approximate home)
-        self.target_pos = [0.0, 0.0, -0.22] 
-        self.target_rpy = [0.0, 0.0, 0.0] # Roll, Pitch, Yaw
-        self.last_button_state = 0
-        
-        # Inputs (Velocities)
-        self.vel_cmd = [0.0, 0.0, 0.0] # Vx, Vy, Vz
-        self.ang_cmd = [0.0, 0.0, 0.0] # Roll_rate, Pitch_rate, Yaw_rate
+        self.counter = 0
 
-        # --- Publishers ---
-        self.pose_pub = self.create_publisher(Pose, '/delta/target_pose', 10)
-        self.speed_pub = self.create_publisher(Twist, '/delta/speed_params', 10)
-        self.suction_pub = self.create_publisher(Bool, '/suction/command', 10)
-        
-        # --- Subscribers ---
-        self.joy_sub = self.create_subscription(Joy, '/joy', self.joy_callback, 10)
-        
-        # --- Timer ---
-        self.dt = 0.02 # 50Hz
-        self.timer = self.create_timer(self.dt, self.timer_callback) 
-        
-        self.get_logger().info("Joystick Controller Started (Velocity Mode)")
+        self.sub = self.create_subscription(
+            JointTrajectory, 
+            '/model/delta_robot/joint_trajectory', 
+            self.listener_callback, 
+            10)
 
-    def joy_callback(self, msg):
-        # Map Joystick Inputs to Velocities
-        # Left Stick X (Axis 0) -> Vy
-        # Left Stick Y (Axis 1) -> Vx
-        # Right Stick Y (Axis 4) -> Vz
-        
-        deadzone = 0.1
-        
-        # Vx (Inverted Axis 1)
-        self.vel_cmd[0] = 0.0
-        if abs(msg.axes[1]) > deadzone:
-            self.vel_cmd[0] = msg.axes[1] * self.max_linear_speed
+    def map_deg_to_us(self, deg):
+        deg += OFFSET_DEG
+        deg = max(MIN_DEG, min(MAX_DEG, deg))
+        us = (deg - MIN_DEG) * (MAX_US - MIN_US) / (MAX_DEG - MIN_DEG) + MIN_US
+        return us
+
+    def listener_callback(self, msg):
+        if msg.points:
+            # Extract ONLY Joint 1 (Index 0 -> Pin D2)
+            rad1 = msg.points[0].positions[0]
             
-        # Vy (Axis 0)
-        self.vel_cmd[1] = 0.0
-        if abs(msg.axes[0]) > deadzone:
-            self.vel_cmd[1] = msg.axes[0] * self.max_linear_speed
+            # Convert
+            us1 = self.map_deg_to_us(math.degrees(rad1))
             
-        # Vz (Axis 4)
-        self.vel_cmd[2] = 0.0
-        if abs(msg.axes[4]) > deadzone:
-            self.vel_cmd[2] = msg.axes[4] * self.max_linear_speed
-            
-        # Angular Rates
-        # Axis 3 -> Roll Rate
-        self.ang_cmd[0] = 0.0
-        if abs(msg.axes[3]) > deadzone:
-            self.ang_cmd[0] = msg.axes[3] * self.max_angular_speed
+            # Store
+            self.counter += 1
+            self.t_data.append(self.counter)
+            self.y1_data.append(us1)
 
-        # Yaw (Triggers)
-        # Assuming Triggers go from 1.0 (release) to -1.0 (press) or 0 to 1
-        # Simple difference logic
-        val_yaw = (msg.axes[2] - msg.axes[5]) 
-        self.ang_cmd[2] = val_yaw * self.max_angular_speed * 0.5
+# Global Node
+node = None
 
-        # Button Logic (Same as before)
-        if msg.buttons[0] == 1 and self.last_button_state == 0:
-            self.get_logger().info("Attach Command Sent (True)")
-            self.suction_pub.publish(Bool(data=True))
-        if len(msg.buttons) > 1 and msg.buttons[1] == 1: 
-             self.get_logger().info("Detach Command Sent (False)")
-             self.suction_pub.publish(Bool(data=False))
-        if len(msg.buttons) > 2 and msg.buttons[2] == 1: 
-            self.get_logger().info("Reset Position Command Sent")
-            self.target_pos = [0.0, 0.0, -0.22]
-            self.target_rpy = [0.0, 0.0, 0.0]
-
-        self.last_button_state = msg.buttons[0]
-
-    def timer_callback(self):
-        # Integrate Velocity to Position
-        # New_Pos = Old_Pos + (Velocity * dt)
+def update_plot(frame):
+    if node and len(node.y1_data) > 0:
+        plt.cla()
         
-        self.target_pos[0] += self.vel_cmd[0] * self.dt
-        self.target_pos[1] += self.vel_cmd[1] * self.dt
-        self.target_pos[2] += self.vel_cmd[2] * self.dt
+        # Plot only Servo 1
+        current_val = node.y1_data[-1]
+        plt.plot(node.t_data, node.y1_data, label=f'Servo 1 (D2): {current_val:.1f} us', color='r', linewidth=2)
         
-        self.target_rpy[0] += self.ang_cmd[0] * self.dt
-        self.target_rpy[1] += self.ang_cmd[1] * self.dt
-        self.target_rpy[2] += self.ang_cmd[2] * self.dt
+        # Draw limits
+        plt.axhline(y=MIN_US, color='k', linestyle='--', alpha=0.3)
+        plt.axhline(y=MAX_US, color='k', linestyle='--', alpha=0.3)
+        
+        plt.title('Servo 1 (Pin D2) Command Stream')
+        plt.ylabel('Pulse Width (microseconds)')
+        plt.xlabel('Packet Count')
+        plt.legend(loc='upper left')
+        plt.grid(True)
+        
+        # Dynamic Zoom: Center the view around the current value +/- 50us
+        # This lets you see the "micro-jitters" clearly
+        plt.ylim(current_val - 50, current_val + 50)
 
-        # Publish Target Pose
-        msg = Pose()
-        msg.position.x = self.target_pos[0]
-        msg.position.y = self.target_pos[1]
-        msg.position.z = self.target_pos[2]
-        
-        # RPY -> Quaternion
-        import math
-        r, p, y = self.target_rpy
-        cy = math.cos(y * 0.5); sy = math.sin(y * 0.5)
-        cp = math.cos(p * 0.5); sp = math.sin(p * 0.5)
-        cr = math.cos(r * 0.5); sr = math.sin(r * 0.5)
-        
-        msg.orientation.w = cr * cp * cy + sr * sp * sy
-        msg.orientation.x = sr * cp * cy - cr * sp * sy
-        msg.orientation.y = cr * sp * cy + sr * cp * sy
-        msg.orientation.z = cr * cp * sy - sr * sp * cy
-        
-        self.pose_pub.publish(msg)
+def main():
+    global node
+    rclpy.init()
+    node = VisualizerNode()
 
-        # Publish Speed Params (Optional, mainly for GCode/Auto moves)
-        # For Teleop, we rely on the controller's bypass logic
-        speed_msg = Twist()
-        speed_msg.linear.x = 0.2 # Default run speed
-        speed_msg.linear.y = 1.0 # Default Accel
-        speed_msg.linear.z = 1.0 # Default Decel
-        self.speed_pub.publish(speed_msg)
+    # Run ROS in background thread
+    ros_thread = threading.Thread(target=rclpy.spin, args=(node,), daemon=True)
+    ros_thread.start()
 
-def main(args=None):
-    rclpy.init(args=args)
-    node = JoystickController()
-    try:
-        rclpy.spin(node)
-    except KeyboardInterrupt:
-        pass
-    finally:
-        node.destroy_node()
-        rclpy.shutdown()
+    # Setup Plot
+    fig = plt.figure()
+    ani = animation.FuncAnimation(fig, update_plot, interval=50) 
+    plt.show()
+
+    rclpy.shutdown()
 
 if __name__ == '__main__':
     main()

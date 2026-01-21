@@ -1,3 +1,14 @@
+/**
+ * @file main3.c (ARCHIVED)
+ * @brief 250Hz Linear Interpolation (S-Curve Removed)
+ *
+ * CHANGES FROM main2.c:
+ * - 250Hz Motion Loop (5 sub-steps per 50Hz packet)
+ * - LINEAR interpolation (S-curve removed for streaming)
+ * - 1MHz Timer Resolution (simpler math)
+ *
+ * ISSUES: Still uses buffered approach with latency.
+ */
 #include "driver/mcpwm_prelude.h"
 #include "esp_event.h"
 #include "esp_log.h"

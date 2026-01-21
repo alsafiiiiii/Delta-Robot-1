@@ -1,80 +1,83 @@
 #!/usr/bin/env python3
-import socket
-import struct
-import numpy as np
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import Point
-import time
+from trajectory_msgs.msg import JointTrajectory
+import serial
+import math
 
-# --- CONFIGURATION ---
-ESP_IP = "10.38.19.11"
-ESP_PORT = 3333
-TARGET_RATE = 50.0  # Hz - MUST match ESP32
-
-class DeltaHardwareBridge(Node):
+class EspSerialBridge(Node):
     def __init__(self):
-        super().__init__('delta_hardware_bridge')
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.esp_addr = (ESP_IP, ESP_PORT)
+        super().__init__('esp_serial_bridge')
         
-        self.packet_count = 0
-        self.dt = 1.0 / TARGET_RATE
-        self.last_point = Point()
-        self.last_point.x = 0.0
-        self.last_point.y = 0.0
-        self.last_point.z = -0.22
+        self.serial_port = '/dev/ttyUSB0' 
+        self.baud_rate = 115200
         
-        self.subscription = self.create_subscription(
-            Point,
-            '/delta/reference_point',
-            self.listener_callback,
-            10
-        )
+        # --- CALIBRATION ---
+        # Match these exactly to your ESP32 #defines
+        self.MIN_US = 600
+        self.MAX_US = 2400
+        self.MIN_DEG = -90.0
+        self.MAX_DEG = 90.0
         
-        # Timer to enforce 50Hz output (even if ROS messages are slower)
-        self.timer = self.create_timer(self.dt, self.send_packet)
-        
-        self.get_logger().info(f"✅ Bridge Ready. Target: {ESP_IP}:{ESP_PORT} @ {TARGET_RATE}Hz")
+        # OFFSET: If your robot arms are horizontal at 0 rads, 
+        # but your servo horns are vertical at 1500us, you might need this.
+        # Start with 0.0 and adjust if arms point the wrong way.
+        self.OFFSET_DEG = 0.0 
 
-    def listener_callback(self, msg):
-        # Update latest point whenever ROS publishes
-        self.last_point = msg
-
-    def send_packet(self):
-        """Sends packet at guaranteed 50Hz rate using last received point"""
         try:
-            # Prepare (X, Y, Z, Mode) packet
-            # Mode 0 = Linear Interpolation (Cartesian)
-            packet = struct.pack('<fffB', 
-                                 self.last_point.x, 
-                                 self.last_point.y, 
-                                 self.last_point.z, 
-                                 0)  # Mode 0 = Linear
-            self.sock.sendto(packet, self.esp_addr)
-            self.packet_count += 1
-            
+            self.ser = serial.Serial(self.serial_port, self.baud_rate, timeout=0.1)
+            self.get_logger().info(f"Connected to {self.serial_port}")
         except Exception as e:
-            self.get_logger().error(f"Send Error: {e}")
+            self.get_logger().error(f"Serial Error: {e}")
+            exit(1)
 
-        # Rate Monitor (every 2 seconds)
-        now = self.get_clock().now()
-        if not hasattr(self, 'last_log_time'):
-            self.last_log_time = now
+        self.sub = self.create_subscription(
+            JointTrajectory, 
+            '/model/delta_robot/joint_trajectory', 
+            self.traj_callback, 
+            10)
+
+    def map_deg_to_us(self, deg):
+        # 1. Apply Offset
+        deg += self.OFFSET_DEG
         
-        diff = (now - self.last_log_time).nanoseconds / 1e9
-        if diff >= 2.0:
-            rate = self.packet_count / diff
-            self.get_logger().info(
-                f"TX Rate: {rate:.1f} Hz | "
-                f"Target: ({self.last_point.x:.3f}, {self.last_point.y:.3f}, {self.last_point.z:.3f})"
-            )
-            self.packet_count = 0
-            self.last_log_time = now
+        # 2. Clamp to physical limits (Safety)
+        deg = max(self.MIN_DEG, min(self.MAX_DEG, deg))
+        
+        # 3. Linear Map
+        # (val - min_in) * (max_out - min_out) / (max_in - min_in) + min_out
+        us = (deg - self.MIN_DEG) * (self.MAX_US - self.MIN_US) / (self.MAX_DEG - self.MIN_DEG) + self.MIN_US
+        return us
+
+    def traj_callback(self, msg):
+        if msg.points:
+            # 1. Get Radians
+            rads = msg.points[0].positions[0:3]
+            
+            # 2. Convert to Degrees
+            deg1 = math.degrees(rads[0])
+            deg2 = math.degrees(rads[1])
+            deg3 = math.degrees(rads[2])
+            
+            # 3. Convert to Microseconds
+            us1 = self.map_deg_to_us(deg1)
+            us2 = self.map_deg_to_us(deg2)
+            us3 = self.map_deg_to_us(deg3)
+            
+            # 4. Format packet: "A,1500,1500,1500\n"
+            # Using .0f to send clean integers (e.g. "1500")
+            packet = f"A,{us1:.0f},{us2:.0f},{us3:.0f}\n"
+            
+            try:
+                self.ser.write(packet.encode('utf-8'))
+                # Debug print (optional)
+                # self.get_logger().info(f"Sent: {packet.strip()}")
+            except Exception as e:
+                self.get_logger().error(f"Write Failed: {e}")
 
 def main(args=None):
     rclpy.init(args=args)
-    rclpy.spin(DeltaHardwareBridge())
+    rclpy.spin(EspSerialBridge())
     rclpy.shutdown()
 
 if __name__ == '__main__':
