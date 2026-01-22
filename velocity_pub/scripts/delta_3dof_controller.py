@@ -27,7 +27,7 @@ class SmoothDeltaController(Node):
         super().__init__('smooth_delta_controller')
         
         # --- CONFIGURATION ---
-        self.loop_rate = 100.0  
+        self.loop_rate = 50.0  # Reduced from 100Hz to match servo refresh
         self.dt = 1.0 / self.loop_rate
         self.linear_speed = 0.05  
         self.angular_speed = 1.0  

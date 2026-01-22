@@ -13,16 +13,15 @@ class EspSerialBridge(Node):
         self.baud_rate = 115200
         
         # --- CALIBRATION ---
-        # Match these exactly to your ESP32 #defines
-        self.MIN_US = 600
+        self.MIN_US = 550
         self.MAX_US = 2400
-        self.MIN_DEG = -90.0
-        self.MAX_DEG = 90.0
-        
-        # OFFSET: If your robot arms are horizontal at 0 rads, 
-        # but your servo horns are vertical at 1500us, you might need this.
-        # Start with 0.0 and adjust if arms point the wrong way.
+        self.MIN_DEG = 0
+        self.MAX_DEG = 180
         self.OFFSET_DEG = 0.0 
+        
+        # Change detection threshold (8-bit encoder = ~7µs resolution)
+        self.CHANGE_THRESHOLD = 5.0  # Only send if change > 5µs
+        self.last_sent = [0.0, 0.0, 0.0]
 
         try:
             self.ser = serial.Serial(self.serial_port, self.baud_rate, timeout=0.1)
@@ -64,16 +63,19 @@ class EspSerialBridge(Node):
             us2 = self.map_deg_to_us(deg2)
             us3 = self.map_deg_to_us(deg3)
             
-            # 4. Format packet: "A,1500,1500,1500\n"
-            # Using .0f to send clean integers (e.g. "1500")
-            packet = f"A,{us1:.0f},{us2:.0f},{us3:.0f}\n"
-            
-            try:
-                self.ser.write(packet.encode('utf-8'))
-                # Debug print (optional)
-                # self.get_logger().info(f"Sent: {packet.strip()}")
-            except Exception as e:
-                self.get_logger().error(f"Write Failed: {e}")
+            # 4. Change detection - only send if values changed significantly
+            if (abs(us1 - self.last_sent[0]) > self.CHANGE_THRESHOLD or
+                abs(us2 - self.last_sent[1]) > self.CHANGE_THRESHOLD or
+                abs(us3 - self.last_sent[2]) > self.CHANGE_THRESHOLD):
+                
+                # Use 1 decimal place for sub-encoder precision
+                packet = f"A,{us1:.1f},{us2:.1f},{us3:.1f}\n"
+                
+                try:
+                    self.ser.write(packet.encode('utf-8'))
+                    self.last_sent = [us1, us2, us3]
+                except Exception as e:
+                    self.get_logger().error(f"Write Failed: {e}")
 
 def main(args=None):
     rclpy.init(args=args)
