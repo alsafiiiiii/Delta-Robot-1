@@ -56,7 +56,13 @@ class LivePlotter(Node):
             
             # Calculate Velocity (deg/s)
             vel = 0.0
-            if dt > 0.001: # Avoid div by zero
+            # Filter excessive jitter for cleaner plot
+            if dt < 0.005: 
+                dt = 0.01 # Assume 100Hz if packet arrived too fast (OS buffering)
+            
+            # Calculate Velocity (deg/s)
+            vel = 0.0
+            if dt > 0.001: 
                 vel = (deg - self.last_pos) / dt
             
             # Store
