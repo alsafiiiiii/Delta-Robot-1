@@ -1,69 +1,38 @@
-| Supported Targets | ESP32 | ESP32-C5 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
-# MCPWM RC Servo Control Example
+# Optimized ESP32 Servo Controller
 
-(See the README.md file in the upper level 'examples' directory for more information about examples.)
+This firmware is tuned for **High-Performance Delta Robot Control**. It differs significantly from the standard ESP-IDF example.
 
-This example illustrates how to drive a typical [RC Servo](https://en.wikipedia.org/wiki/Servo_%28radio_control%29) by sending a PWM signal using the MCPWM driver. The PWM pulse has a frequency of 50Hz (period of 20ms), and the active-high time (which controls the rotation) ranges from 0.5s to 2.5ms with 1.5ms always being center of range.
+## Key Optimizations
 
-## How to Use Example
+| Feature | Standard | Optimized (This Firmware) | Benefit |
+|---------|----------|---------------------------|---------|
+| **PWM Frequency** | 50Hz (20ms) | **200Hz (5ms)** | 4x faster response, 75% less latency. |
+| **Smoothing** | 0.9 (Heavy) | **0.15 (Light)** | Minimal lag. Relies on Python for trajectory planning. |
+| **Resolution** | 7µs (Quantized) | **1µs (Full)** | Smooth, step-free motion. |
+| **Control Rate** | Varies | **200Hz Fixed** | Synchronized with PWM output. |
 
-### Hardware Required
+## Configuration
 
-* A development board with any Espressif SoC which features MCPWM peripheral (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
-* A USB cable for Power supply and programming
-* A RC servo motor, e.g. [SG90](http://www.ee.ic.ac.uk/pcheung/teaching/DE1_EE/stores/sg90_datasheet.pdf)
+All critical settings are defined at the top of `main/mcpwm_servo_control_example_main.c`:
 
-Connection :
-
-```
-      ESP Board              Servo Motor      5V
-+-------------------+     +---------------+    ^
-|  SERVO_PULSE_GPIO +-----+PWM        VCC +----+
-|                   |     |               |
-|               GND +-----+GND            |
-+-------------------+     +---------------+
+```c
+#define SERVO_FREQ_HZ 200      // PWM Frequency
+#define SMOOTHING_FACTOR 0.15f // EMA Filter
+#define DEADBAND_US 4.0f       // Jitter prevention
 ```
 
-Note that, some kind of servo might need a higher current supply than the development board usually can provide. It's recommended to power the servo separately.
+## Protocol
 
-### Build and Flash
+The firmware expects a serial string at **115200 baud**:
 
-Run `idf.py -p PORT flash monitor` to build, flash and monitor the project.
-
-(To exit the serial monitor, type ``Ctrl-]``.)
-
-See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html) for full steps to configure and use ESP-IDF to build projects.
-
-
-## Example Output
-
-Run the example, you will see the following output log:
-
-```
-...
-I (0) cpu_start: Starting scheduler on APP CPU.
-I (305) example: Create timer and operator
-I (305) example: Connect timer and operator
-I (305) example: Create comparator and generator from the operator
-I (315) gpio: GPIO[44]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
-I (325) example: Set generator action on timer and compare event
-I (335) example: Enable and start timer
-I (335) example: Angle of rotation: 0
-I (1345) example: Angle of rotation: 2
-I (2345) example: Angle of rotation: 4
-I (3345) example: Angle of rotation: 6
-I (4345) example: Angle of rotation: 8
-I (5345) example: Angle of rotation: 10
-I (6345) example: Angle of rotation: 12
-I (7345) example: Angle of rotation: 14
-I (8345) example: Angle of rotation: 16
-I (9345) example: Angle of rotation: 18
-...
+```text
+A,<servo1_us>,<servo2_us>,<servo3_us>\n
 ```
 
-The servo will rotate from -60 degree to 60 degree, and then turn back again.
+Example: `A,1500.5,1600.2,1450.0`
 
-## Troubleshooting
+## Flashing
 
-For any technical queries, please open an [issue] (https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.
+```bash
+idf.py build flash monitor
+```
