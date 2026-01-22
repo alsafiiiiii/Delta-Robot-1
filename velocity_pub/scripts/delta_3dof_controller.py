@@ -8,6 +8,7 @@ import numpy as np
 from visual_kinematics.RobotDelta import RobotDelta
 from visual_kinematics.Frame import Frame
 import math
+from quintic_trajectory import QuinticGenerator
 
 def quaternion_to_euler(x, y, z, w):
     t0 = +2.0 * (w * x + y * z)
@@ -44,7 +45,11 @@ class SmoothDeltaController(Node):
         self.target_pos = np.array([0.0, 0.0, -0.22])
         self.target_tilt = 0.0
         self.target_spin = 0.0
+        self.target_spin = 0.0
         self.is_moving = False
+        
+        # Trajectory Generator
+        self.traj_generator = None
 
         self.joint_pub = self.create_publisher(JointTrajectory, '/model/delta_robot/joint_trajectory', 10)
         self.pose_sub = self.create_subscription(Pose, '/delta/target_pose', self.new_target_callback, 10)
@@ -64,6 +69,12 @@ class SmoothDeltaController(Node):
         # r, p, y = quaternion_to_euler(msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w)
         # self.target_tilt = r
         # self.target_spin = y
+        # Start new trajectory from current actual position to target
+        self.traj_generator = QuinticGenerator(
+            start_pos=self.current_pos,
+            end_pos=self.target_pos,
+            average_speed=self.linear_speed
+        )
         self.is_moving = True
 
     def speed_callback(self, msg):
@@ -71,20 +82,14 @@ class SmoothDeltaController(Node):
         self.angular_speed = msg.angular.z
 
     def control_loop(self):
-        if not self.is_moving:
-            self.solve_and_publish()
-            return
-
-        pos_error = self.target_pos - self.current_pos
-        dist = np.linalg.norm(pos_error)
-        step_dist = self.linear_speed * self.dt
-        step_ang = self.angular_speed * self.dt
-        
-        if dist > step_dist:
-            self.current_pos += (pos_error / dist) * step_dist
-        else:
-            self.current_pos = np.copy(self.target_pos)
-            self.is_moving = False
+        if self.traj_generator:
+            # Get next point in smooth trajectory
+            pos, vel, acc = self.traj_generator.get_state(self.dt)
+            self.current_pos = pos
+            
+            if self.traj_generator.finished:
+                self.traj_generator = None
+                self.is_moving = False
             
         self.solve_and_publish()
 

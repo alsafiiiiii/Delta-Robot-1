@@ -27,7 +27,9 @@ const int SERVO_PINS[NUM_SERVOS] = {2, 4, 5}; // GPIO Pins
 
 // Smoothing filter coefficient (0.0 = no smoothing, 1.0 = infinite smoothing)
 // Increased to reduce current spikes with limited 2.3A PSU
-#define SMOOTHING_FACTOR 0.93f
+// Light smoothing: 0.15f (Reduced from 0.5f because Python now sends smooth
+// Quintic paths)
+#define SMOOTHING_FACTOR 0.15f
 
 // Rate limit: max microseconds change per update cycle
 // At 200Hz, 15µs/update = 3000µs/sec max velocity
@@ -83,8 +85,8 @@ static void motion_timer_callback(void *arg) {
         servos[i].current_us += step;
       }
 
-      // Quantize and write to hardware
-      uint32_t new_ticks = (uint32_t)quantize_us(servos[i].current_us);
+      // Use full float resolution cast to int (1us precision with 1MHz timer)
+      uint32_t new_ticks = (uint32_t)servos[i].current_us;
 
       if (new_ticks != last_written_ticks[i]) {
         mcpwm_comparator_set_compare_value(servos[i].comparator, new_ticks);
@@ -103,7 +105,7 @@ static void setup_mcpwm() {
       .group_id = 0,
       .clk_src = MCPWM_TIMER_CLK_SRC_DEFAULT,
       .resolution_hz = 1000000, // 1MHz = 1us per tick
-      .period_ticks = 20000,    // 50Hz PWM (20ms period)
+      .period_ticks = 5000,     // 200Hz PWM (5ms period) to match Control Loop
       .count_mode = MCPWM_TIMER_COUNT_MODE_UP,
   };
   ESP_ERROR_CHECK(mcpwm_new_timer(&timer_config, &timer));

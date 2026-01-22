@@ -47,6 +47,7 @@ install(
     scripts/joystick_controller.py
     scripts/camera_pnp.py
     scripts/delta_3dof_controller.py
+    scripts/live_plotter.py
     launch/four_ws_control.launch.py
     DESTINATION lib/${PROJECT_NAME}
   )
