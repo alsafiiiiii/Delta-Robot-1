@@ -20,7 +20,7 @@ class EspSerialBridge(Node):
         self.OFFSET_DEG = 0.0 
         
         # Change detection threshold (8-bit encoder = ~7µs resolution)
-        self.CHANGE_THRESHOLD = 5.0  # Only send if change > 5µs
+        self.CHANGE_THRESHOLD = 0.5  # Send almost every update (0.5µs precision)
         self.last_sent = [0.0, 0.0, 0.0]
 
         try:
