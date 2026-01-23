@@ -29,15 +29,17 @@ const int SERVO_PINS[NUM_SERVOS] = {2, 4, 5}; // GPIO Pins
 // Increased to reduce current spikes with limited 2.3A PSU
 // Light smoothing: 0.15f (Reduced from 0.5f because Python now sends smooth
 // Quintic paths)
-#define SMOOTHING_FACTOR 0.15f
+// UPDATED: 0.7f - Maximum stability for high-voltage 8-bit pot servos
+#define SMOOTHING_FACTOR 0.7f
 
 // Rate limit: max microseconds change per update cycle
 // At 200Hz, 15µs/update = 3000µs/sec max velocity
-// This caps acceleration to prevent current spikes
-#define MAX_STEP_US 15.0f
+// At 200Hz, 10µs/update = 2000µs/sec max velocity (reduced for high-torque
+// servos)
+#define MAX_STEP_US 10.0f
 
-// Deadband in microseconds
-#define DEADBAND_US 4.0f
+// Deadband: Increased to 6µs to prevent hunting at high voltage
+#define DEADBAND_US 6.0f
 
 // Quantize to encoder resolution
 static inline float quantize_us(float us) {
@@ -105,7 +107,8 @@ static void setup_mcpwm() {
       .group_id = 0,
       .clk_src = MCPWM_TIMER_CLK_SRC_DEFAULT,
       .resolution_hz = 1000000, // 1MHz = 1us per tick
-      .period_ticks = 5000,     // 200Hz PWM (5ms period) to match Control Loop
+      .period_ticks =
+          20000, // 50Hz PWM (20ms period) - Standard for 8-bit pot servos
       .count_mode = MCPWM_TIMER_COUNT_MODE_UP,
   };
   ESP_ERROR_CHECK(mcpwm_new_timer(&timer_config, &timer));

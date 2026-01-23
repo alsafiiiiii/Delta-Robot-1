@@ -29,6 +29,7 @@ class LivePlotter(Node):
         self.last_time = time.time()
         self.last_pos = 0.0
         self.start_time = time.time()
+        self.vel_buffer = deque(maxlen=5)  # Moving average buffer for velocity
         
         self.sub_traj = self.create_subscription(
             JointTrajectory, 
@@ -54,16 +55,17 @@ class LivePlotter(Node):
             deg = math.degrees(rad)
             us = self.map_deg_to_us(deg)
             
-            # Calculate Velocity (deg/s)
+            # Calculate Velocity (deg/s) with moving average to filter spikes
             vel = 0.0
             # Filter excessive jitter for cleaner plot
             if dt < 0.005: 
                 dt = 0.01 # Assume 100Hz if packet arrived too fast (OS buffering)
             
-            # Calculate Velocity (deg/s)
-            vel = 0.0
-            if dt > 0.001: 
-                vel = (deg - self.last_pos) / dt
+            raw_vel = (deg - self.last_pos) / dt if dt > 0.001 else 0.0
+            
+            # Moving average filter (last 5 samples)
+            self.vel_buffer.append(raw_vel)
+            vel = sum(self.vel_buffer) / len(self.vel_buffer)
             
             # Store
             self.times.append(now - self.start_time)
