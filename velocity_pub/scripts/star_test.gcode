@@ -3,7 +3,7 @@
 ; Safe Z: -0.22, Draw Z: -0.25, Speed F50
 
 ; 1. Start Center
-G1 X0.0 Y0.0 Z-0.22 F20
+G1 X0.0 Y0.0 Z-0.22 F200
 
 ; 2. Point 1 (Top, 90 deg)
 G1 X0.0 Y0.05 Z-0.22

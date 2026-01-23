@@ -1,114 +1,166 @@
+/**
+ * Interpolating Servo Controller for ESP32
+ *
+ * Implements "Fire and Forget" command protocol:
+ * T<idx>:<degrees> D:<duration_ms>
+ *
+ * The ESP32 handles smooth linear interpolation between the current position
+ * and the target position over the specified duration.
+ *
+ * PWM Frequency: 50Hz (Standard for digital servos)
+ * Control Loop: 50Hz
+ */
+
 #include "driver/mcpwm_prelude.h"
 #include "driver/uart.h"
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
 #include "freertos/task.h"
 #include <math.h>
 #include <string.h>
 
-static const char *TAG = "DeltaController";
+static const char *TAG = "InterpServo";
 
 // --- CONFIGURATION ---
 #define NUM_SERVOS 3
-const int SERVO_PINS[NUM_SERVOS] = {2, 4, 5}; // GPIO Pins
+const int SERVO_PINS[NUM_SERVOS] = {2, 4, 5};
 
-// Servo Physical Calibration
+// Servo Calibration
 #define SERVO_MIN_US 550
 #define SERVO_MAX_US 2400
-#define SERVO_CENTER_US 1500
+#define SERVO_MIN_DEG 0.0f
+#define SERVO_MAX_DEG 180.0f
 
-// 8-bit encoder: (2400-550)/256 ≈ 7.2µs per tick
-#define ENCODER_RESOLUTION_US 7.0f
+// UART
+#define UART_NUM UART_NUM_0
+#define BUF_SIZE 1024
 
-// Control Loop Settings
-#define CONTROL_FREQ_HZ 200 // Update servos 200 times/sec
-
-// Smoothing filter coefficient (0.0 = no smoothing, 1.0 = infinite smoothing)
-// Increased to reduce current spikes with limited 2.3A PSU
-// Light smoothing: 0.15f (Reduced from 0.5f because Python now sends smooth
-// Quintic paths)
-// UPDATED: 0.7f - Maximum stability for high-voltage 8-bit pot servos
-#define SMOOTHING_FACTOR 0.7f
-
-// Rate limit: max microseconds change per update cycle
-// At 200Hz, 15µs/update = 3000µs/sec max velocity
-// At 200Hz, 10µs/update = 2000µs/sec max velocity (reduced for high-torque
-// servos)
-#define MAX_STEP_US 10.0f
-
-// Deadband: Increased to 6µs to prevent hunting at high voltage
-#define DEADBAND_US 6.0f
-
-// Quantize to encoder resolution
-static inline float quantize_us(float us) {
-  return roundf(us / ENCODER_RESOLUTION_US) * ENCODER_RESOLUTION_US;
-}
+// Control Loop
+#define CONTROL_FREQ_HZ 50
 
 // --- DATA STRUCTURES ---
 typedef struct {
-  float current_us;               // Current smooth position
-  float target_us;                // Where we want to go (from serial)
-  mcpwm_cmpr_handle_t comparator; // Handle to hardware
+  float current_degree; // Current position
+  float target_degree;  // Final destination
+  float step_per_tick;  // Change per 20ms tick
+  int remaining_ticks;  // Ticks left in current move
+  mcpwm_cmpr_handle_t comparator;
 } ServoState;
 
-uint32_t last_written_ticks[NUM_SERVOS] = {0, 0, 0};
 ServoState servos[NUM_SERVOS];
 
-// Mutex to protect data between UART and Motion Loop
-SemaphoreHandle_t motion_mutex;
+// --- HELPERS ---
+float deg_to_us(float deg) {
+  deg = fmaxf(SERVO_MIN_DEG, fminf(SERVO_MAX_DEG, deg));
+  return (deg - SERVO_MIN_DEG) * (SERVO_MAX_US - SERVO_MIN_US) /
+             (SERVO_MAX_DEG - SERVO_MIN_DEG) +
+         SERVO_MIN_US;
+}
 
-// --- MOTION LOGIC ---
-// Simple exponential smoothing filter
-// Runs at 200Hz
+// --- MOTION TIMER ---
 static void motion_timer_callback(void *arg) {
-
-  if (xSemaphoreTake(motion_mutex, 0) == pdTRUE) {
-
-    for (int i = 0; i < NUM_SERVOS; i++) {
-      float error = servos[i].target_us - servos[i].current_us;
-
-      // If within deadband, snap to target
-      if (fabsf(error) < DEADBAND_US) {
-        servos[i].current_us = servos[i].target_us;
-      } else {
-        // Exponential smoothing + rate limiting
-        float smoothed = servos[i].current_us * SMOOTHING_FACTOR +
-                         servos[i].target_us * (1.0f - SMOOTHING_FACTOR);
-
-        // Rate limit: clamp step size to prevent current spikes
-        float step = smoothed - servos[i].current_us;
-        if (step > MAX_STEP_US)
-          step = MAX_STEP_US;
-        if (step < -MAX_STEP_US)
-          step = -MAX_STEP_US;
-
-        servos[i].current_us += step;
-      }
-
-      // Use full float resolution cast to int (1us precision with 1MHz timer)
-      uint32_t new_ticks = (uint32_t)servos[i].current_us;
-
-      if (new_ticks != last_written_ticks[i]) {
-        mcpwm_comparator_set_compare_value(servos[i].comparator, new_ticks);
-        last_written_ticks[i] = new_ticks;
-      }
+  for (int i = 0; i < NUM_SERVOS; i++) {
+    if (servos[i].remaining_ticks > 0) {
+      // Linear interpolation
+      servos[i].current_degree += servos[i].step_per_tick;
+      servos[i].remaining_ticks--;
+    } else {
+      // Ensure we end exactly at target
+      servos[i].current_degree = servos[i].target_degree;
     }
-    xSemaphoreGive(motion_mutex);
+
+    uint32_t us = (uint32_t)deg_to_us(servos[i].current_degree);
+    mcpwm_comparator_set_compare_value(servos[i].comparator, us);
   }
 }
 
-// --- HARDWARE SETUP (MCPWM) ---
+// --- COMMAND PARSER ---
+// Format: "T0:90.5 D:1000" (Servo 0 to 90.5 deg in 1000ms)
+void process_command(char *line) {
+  int servo_idx;
+  float target_deg;
+  int duration_ms;
+
+  // Safety check line length
+  if (strlen(line) > 64)
+    return;
+
+  // Parse "T<idx>:<deg> D:<ms>"
+  char *t_ptr = strstr(line, "T");
+  char *d_ptr = strstr(line, "D");
+
+  if (t_ptr && d_ptr) {
+    // Parse T part
+    if (sscanf(t_ptr, "T%d:%f", &servo_idx, &target_deg) == 2) {
+      // Parse D part
+      if (sscanf(d_ptr, "D:%d", &duration_ms) == 1) {
+
+        // Validate inputs
+        if (servo_idx >= 0 && servo_idx < NUM_SERVOS) {
+          // Clamp target
+          target_deg = fmaxf(SERVO_MIN_DEG, fminf(SERVO_MAX_DEG, target_deg));
+
+          // Clamp duration (min 20ms to avoid divide by zero)
+          if (duration_ms < 20)
+            duration_ms = 20;
+
+          // Calculate Step
+          int ticks = duration_ms * CONTROL_FREQ_HZ / 1000;
+          float diff = target_deg - servos[servo_idx].current_degree;
+
+          servos[servo_idx].target_degree = target_deg;
+          servos[servo_idx].remaining_ticks = ticks;
+          servos[servo_idx].step_per_tick = diff / (float)ticks;
+
+          // ESP_LOGI(TAG, "S%d -> %.1f deg in %d ms (Step: %.4f)",
+          //          servo_idx, target_deg, duration_ms,
+          //          servos[servo_idx].step_per_tick);
+        }
+      }
+    }
+  }
+}
+
+// --- UART TASK ---
+static void rx_task(void *arg) {
+  uint8_t *data = (uint8_t *)malloc(BUF_SIZE);
+  char line_buffer[128];
+  int line_pos = 0;
+
+  while (1) {
+    int len =
+        uart_read_bytes(UART_NUM, data, BUF_SIZE, 20 / portTICK_PERIOD_MS);
+    if (len > 0) {
+      for (int i = 0; i < len; i++) {
+        char c = (char)data[i];
+        if (c == '\n' || c == '\r') {
+          if (line_pos > 0) {
+            line_buffer[line_pos] = '\0';
+            process_command(line_buffer);
+            line_pos = 0;
+          }
+        } else {
+          if (line_pos < sizeof(line_buffer) - 1) {
+            line_buffer[line_pos++] = c;
+          }
+        }
+      }
+    }
+  }
+  free(data);
+}
+
+// --- HARDWARE SETUP ---
 static void setup_mcpwm() {
-  ESP_LOGI(TAG, "Init MCPWM...");
+  ESP_LOGI(TAG, "Initializing MCPWM...");
+
   mcpwm_timer_handle_t timer = NULL;
   mcpwm_timer_config_t timer_config = {
       .group_id = 0,
       .clk_src = MCPWM_TIMER_CLK_SRC_DEFAULT,
-      .resolution_hz = 1000000, // 1MHz = 1us per tick
-      .period_ticks =
-          20000, // 50Hz PWM (20ms period) - Standard for 8-bit pot servos
+      .resolution_hz = 1000000,
+      .period_ticks = 20000, // 50Hz
       .count_mode = MCPWM_TIMER_COUNT_MODE_UP,
   };
   ESP_ERROR_CHECK(mcpwm_new_timer(&timer_config, &timer));
@@ -137,29 +189,21 @@ static void setup_mcpwm() {
                                                   servos[i].comparator,
                                                   MCPWM_GEN_ACTION_LOW)));
 
-    // Init State
-    servos[i].current_us = SERVO_CENTER_US;
-    servos[i].target_us = SERVO_CENTER_US;
-    last_written_ticks[i] = SERVO_CENTER_US;
+    // Initial State
+    servos[i].current_degree = 90.0f; // Assume center start
+    servos[i].target_degree = 90.0f;
+    servos[i].remaining_ticks = 0;
+
+    mcpwm_comparator_set_compare_value(servos[i].comparator,
+                                       (uint32_t)deg_to_us(90.0f));
   }
 
   ESP_ERROR_CHECK(mcpwm_timer_enable(timer));
   ESP_ERROR_CHECK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_START_NO_STOP));
 }
 
-// --- MAIN TASK ---
-void app_main(void) {
-  motion_mutex = xSemaphoreCreateMutex();
-  setup_mcpwm();
-
-  const esp_timer_create_args_t periodic_timer_args = {
-      .callback = &motion_timer_callback, .name = "motion_loop"};
-  esp_timer_handle_t periodic_timer;
-  ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
-  ESP_ERROR_CHECK(
-      esp_timer_start_periodic(periodic_timer, 1000000 / CONTROL_FREQ_HZ));
-
-  uart_config_t uart_config = {
+static void setup_uart() {
+  const uart_config_t uart_config = {
       .baud_rate = 115200,
       .data_bits = UART_DATA_8_BITS,
       .parity = UART_PARITY_DISABLE,
@@ -167,54 +211,27 @@ void app_main(void) {
       .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
       .source_clk = UART_SCLK_DEFAULT,
   };
-  uart_driver_install(UART_NUM_0, 1024 * 2, 0, 0, NULL, 0);
-  uart_param_config(UART_NUM_0, &uart_config);
+  uart_driver_install(UART_NUM, BUF_SIZE * 2, 0, 0, NULL, 0);
+  uart_param_config(UART_NUM, &uart_config);
+  uart_set_pin(UART_NUM, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE,
+               UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+}
 
-  ESP_LOGI(TAG, "Smooth Filter Ready. Send: A,1500,1500,1500 (us)");
+// --- MAIN ---
+void app_main(void) {
+  setup_mcpwm();
+  setup_uart();
 
-  uint8_t *data = (uint8_t *)malloc(128);
-  char line[64];
-  int line_idx = 0;
+  // Start motion timer
+  const esp_timer_create_args_t timer_args = {
+      .callback = &motion_timer_callback, .name = "motion_loop"};
+  esp_timer_handle_t motion_timer;
+  ESP_ERROR_CHECK(esp_timer_create(&timer_args, &motion_timer));
+  ESP_ERROR_CHECK(
+      esp_timer_start_periodic(motion_timer, 1000000 / CONTROL_FREQ_HZ));
 
-  while (1) {
-    int len = uart_read_bytes(UART_NUM_0, data, 128, pdMS_TO_TICKS(100));
+  xTaskCreate(rx_task, "uart_rx_task", 4096, NULL, configMAX_PRIORITIES - 1,
+              NULL);
 
-    for (int i = 0; i < len; i++) {
-      char c = (char)data[i];
-      if (c == '\n') {
-        line[line_idx] = 0;
-        if (line[0] == 'A') {
-          float t1, t2, t3;
-          if (sscanf(line, "A,%f,%f,%f", &t1, &t2, &t3) == 3) {
-            xSemaphoreTake(motion_mutex, portMAX_DELAY);
-
-            // Safety clamps
-            if (t1 < SERVO_MIN_US)
-              t1 = SERVO_MIN_US;
-            if (t1 > SERVO_MAX_US)
-              t1 = SERVO_MAX_US;
-            if (t2 < SERVO_MIN_US)
-              t2 = SERVO_MIN_US;
-            if (t2 > SERVO_MAX_US)
-              t2 = SERVO_MAX_US;
-            if (t3 < SERVO_MIN_US)
-              t3 = SERVO_MIN_US;
-            if (t3 > SERVO_MAX_US)
-              t3 = SERVO_MAX_US;
-
-            // Just update targets - smoothing happens in timer callback
-            servos[0].target_us = t1;
-            servos[1].target_us = t2;
-            servos[2].target_us = t3;
-
-            xSemaphoreGive(motion_mutex);
-          }
-        }
-        line_idx = 0;
-      } else {
-        if (line_idx < 63)
-          line[line_idx++] = c;
-      }
-    }
-  }
+  ESP_LOGI(TAG, "Interpolation Controller Started. 50Hz Control.");
 }

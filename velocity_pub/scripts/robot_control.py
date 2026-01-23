@@ -52,30 +52,38 @@ class EspSerialBridge(Node):
         if msg.points:
             # 1. Get Radians
             rads = msg.points[0].positions[0:3]
+            duration = msg.points[0].time_from_start
+            
+            # Duration in Milliseconds
+            duration_ms = int(duration.sec * 1000 + duration.nanosec / 1e6)
+            if duration_ms < 20: duration_ms = 20 # Safety floor
             
             # 2. Convert to Degrees
             deg1 = math.degrees(rads[0])
             deg2 = math.degrees(rads[1])
             deg3 = math.degrees(rads[2])
             
-            # 3. Convert to Microseconds
-            us1 = self.map_deg_to_us(deg1)
-            us2 = self.map_deg_to_us(deg2)
-            us3 = self.map_deg_to_us(deg3)
+            # 3. Apply Calibration/Offset if needed (Currently handled by FW or IK)
+            # Just clamping for safety before sending
+            deg1 = max(self.MIN_DEG, min(self.MAX_DEG, deg1))
+            deg2 = max(self.MIN_DEG, min(self.MAX_DEG, deg2))
+            deg3 = max(self.MIN_DEG, min(self.MAX_DEG, deg3))
             
-            # 4. Change detection - only send if values changed significantly
-            if (abs(us1 - self.last_sent[0]) > self.CHANGE_THRESHOLD or
-                abs(us2 - self.last_sent[1]) > self.CHANGE_THRESHOLD or
-                abs(us3 - self.last_sent[2]) > self.CHANGE_THRESHOLD):
-                
-                # Use 1 decimal place for sub-encoder precision
-                packet = f"A,{us1:.1f},{us2:.1f},{us3:.1f}\n"
-                
-                try:
-                    self.ser.write(packet.encode('utf-8'))
-                    self.last_sent = [us1, us2, us3]
-                except Exception as e:
-                    self.get_logger().error(f"Write Failed: {e}")
+            # 4. Formulate Interpolation Commands
+            # Protocol: T<idx>:<deg> D:<ms>
+            
+            cmds = [
+                f"T0:{deg1:.2f} D:{duration_ms}\n",
+                f"T1:{deg2:.2f} D:{duration_ms}\n",
+                f"T2:{deg3:.2f} D:{duration_ms}\n"
+            ]
+            
+            try:
+                for cmd in cmds:
+                    self.ser.write(cmd.encode('utf-8'))
+                    # self.get_logger().info(f"Sent: {cmd.strip()}")
+            except Exception as e:
+                self.get_logger().error(f"Write Failed: {e}")
 
 def main(args=None):
     rclpy.init(args=args)

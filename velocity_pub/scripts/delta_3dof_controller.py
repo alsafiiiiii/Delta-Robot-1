@@ -27,93 +27,61 @@ class SmoothDeltaController(Node):
     def __init__(self):
         super().__init__('smooth_delta_controller')
         
-        # --- CONFIGURATION ---
-        self.loop_rate = 100.0  # Increased to 100Hz for smoother trajectory sampling
-        self.dt = 1.0 / self.loop_rate
-        self.linear_speed = 0.05  
-        self.angular_speed = 1.0  
-        
         # --- SAFETY SETTINGS ---
-
         # Geometry
         self.robot = RobotDelta(np.array([0.104, 0.040, 0.105, 0.205]))
         
-        # State
-        self.current_pos = np.array([0.0, 0.0, -0.22]) 
-        self.current_tilt = 0.0
-        self.current_spin = 0.0
-        self.target_pos = np.array([0.0, 0.0, -0.22])
-        self.target_tilt = 0.0
-        self.target_spin = 0.0
-        self.target_spin = 0.0
-        self.is_moving = False
-        
-        # Trajectory Generator
-        self.traj_generator = None
-
+        # Publishers / Subscribers
         self.joint_pub = self.create_publisher(JointTrajectory, '/model/delta_robot/joint_trajectory', 10)
-        self.pose_sub = self.create_subscription(Pose, '/delta/target_pose', self.new_target_callback, 10)
-        self.speed_sub = self.create_subscription(Twist, '/delta/speed_params', self.speed_callback, 10)
         
-        self.timer = self.create_timer(self.dt, self.control_loop)
-        self.get_logger().info('Smooth Controller Started (Wrist Only Mode).')
-
-    def new_target_callback(self, msg):
-        
-        # The 3DOF controller does not have tool offset compensation logic.
-        self.target_pos = np.array([msg.position.x, msg.position.y, msg.position.z])
-        
-        # Enforce vertical tool orientation
-        self.target_tilt = 0.0
-        self.target_spin = 0.0
-        # r, p, y = quaternion_to_euler(msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w)
-        # self.target_tilt = r
-        # self.target_spin = y
-        # Start new trajectory from current actual position to target
-        self.traj_generator = QuinticGenerator(
-            start_pos=self.current_pos,
-            end_pos=self.target_pos,
-            average_speed=self.linear_speed
+        # UPDATED: Subscribe to Cartesian Trajectory (Target + Duration)
+        self.cart_sub = self.create_subscription(
+            JointTrajectory, 
+            '/delta/cartesian_trajectory', 
+            self.trajectory_callback, 
+            10
         )
-        self.is_moving = True
+        
+        self.get_logger().info('Smooth Controller Started (Event-Driven Mode).')
 
-    def speed_callback(self, msg):
-        self.linear_speed = msg.linear.x
-        self.angular_speed = msg.angular.z
-
-    def control_loop(self):
-        if self.traj_generator:
-            # Get next point in smooth trajectory
-            pos, vel, acc = self.traj_generator.get_state(self.dt)
-            self.current_pos = pos
-            
-            if self.traj_generator.finished:
-                self.traj_generator = None
-                self.is_moving = False
-            
-        self.solve_and_publish()
-
-    def solve_and_publish(self):
+    def trajectory_callback(self, msg):
+        if not msg.points: return
+        
+        # 1. Extract Target (Cartesian)
+        point = msg.points[0]
+        x, y, z = point.positions[0:3]
+        duration = point.time_from_start
+        
         try:
-            # DIRECT MAPPING: Target = Wrist Position
-            wrist_pos = self.current_pos
-
-            wrist_frame = Frame.from_euler_3(np.array([0., 0., 0.]), np.array([[wrist_pos[0]], [wrist_pos[1]], [wrist_pos[2]]]))
-            
+            # 2. Compute IK (Joint Angles)
+            wrist_frame = Frame.from_euler_3(np.array([0., 0., 0.]), np.array([[x], [y], [z]]))
             joint_angles = self.robot.inverse(wrist_frame).flatten()
             t1, t2, t3 = joint_angles
-            b1 = self.current_tilt + 2 * self.current_spin
-            b2 = 2 * self.current_spin - self.current_tilt
             
-            msg = JointTrajectory()
-            msg.joint_names = ['jbf1', 'jbf2', 'jbf3', 'Bevelj1', 'Bevelj2', 'Tj1', 'BeveljEE']
-            point = JointTrajectoryPoint()
-            point.positions = [float(t1), float(t2), float(t3), float(b1), float(b2), float(self.current_tilt), float(self.current_spin)]
-            point.time_from_start = Duration(sec=0, nanosec=int(self.dt * 1e9)) 
-            msg.points.append(point)
-            self.joint_pub.publish(msg)
+            # Simple assumption for wrist orientation (Face down)
+            tilt = 0.0
+            spin = 0.0
+            b1 = tilt + 2 * spin
+            b2 = 2 * spin - tilt
+            
+            # 3. Construct Output Message (Joints + Duration)
+            out_msg = JointTrajectory()
+            out_msg.joint_names = ['jbf1', 'jbf2', 'jbf3', 'Bevelj1', 'Bevelj2', 'Tj1', 'BeveljEE']
+            
+            out_point = JointTrajectoryPoint()
+            out_point.positions = [float(t1), float(t2), float(t3), float(b1), float(b2), float(tilt), float(spin)]
+            out_point.time_from_start = duration  # Pass-through duration
+            
+            out_msg.points.append(out_point)
+            
+            # 4. Forward immediately
+            self.joint_pub.publish(out_msg)
+            
+            sec = duration.sec + duration.nanosec * 1e-9
+            self.get_logger().info(f"Forwarding Move: [{t1:.2f}, {t2:.2f}, {t3:.2f}] T={sec:.3f}s")
+            
         except Exception as e:
-            self.get_logger().warn(f"IK Error: {e}")
+            self.get_logger().warn(f"IK Error for ({x},{y},{z}): {e}")
 
 def main(args=None):
     rclpy.init(args=args)
