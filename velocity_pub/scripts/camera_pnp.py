@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
-Camera PNP V2 - Improved Pick and Place with OpenCV Visualization
-Fixed: "Runaway Target" bug and State Timer initialization.
+Camera PNP V3 - Revamped XY Logic
+- Simplified state machine
+- Continuous visual tracking during descent
+- Workspace boundary enforcement
 """
 
 import rclpy
@@ -12,61 +14,71 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 import cv2
 import numpy as np
-from geometry_msgs.msg import Twist
 
-class CameraPNP_V2(Node):
+class CameraPNP(Node):
     def __init__(self):
-        super().__init__('camera_pnp_v2')
+        super().__init__('camera_pnp')
 
         # Publishers / Subscribers
         self.pose_pub = self.create_publisher(Pose, '/delta/target_pose', 10)
         self.suction_pub = self.create_publisher(Bool, '/suction/command', 10)
-        self.camera_sub = self.create_subscription(Image, '/camera/image_raw', self.image_callback, 10)
-        self.speed_pub = self.create_publisher(Twist, '/delta/speed_params', 10)
         self.status_pub = self.create_publisher(String, '/pnp/status', 10)
+        self.speed_pub = self.create_publisher(Twist, '/delta/speed_params', 10)
+        self.image_pub = self.create_publisher(Image, '/camera/annotated', 10)  # Annotated output
+        self.camera_sub = self.create_subscription(Image, '/camera/image_raw', self.image_callback, 10)
 
         self.bridge = CvBridge()
         self.timer = self.create_timer(0.05, self.control_loop)  # 20Hz
 
-        # Set fast speed for controller
-        self.set_speed(0.2, 5.0) # 0.2 m/s linear, 5.0 rad/s angular
+        # Set controller speed
+        self.set_speed(0.3, 5.0)
 
-        # State Variables
+        # === STATE ===
         self.state = "SEARCH"
-        self.state_timer = 0  # <--- FIXED: Added initialization
+        self.state_timer = 0
         self.target_found = False
         self.box_center_px = (0, 0)
-        self.box_area = 0
         self.current_image = None
         
-        # Robot pose
-        self.pos = [0.0, 0.0, -0.25]  # x, y, z
-        self.suction_target = [0.0, 0.0, 0.0] # <--- FIXED: Storage for locked target
+        # === ROBOT POSE ===
+        self.pos = [0.0, 0.0, -0.25]
         
-        # Constants
+        # === CONSTANTS ===
         self.SAFE_Z = -0.25
-        self.PRE_PICK_Z = -0.309 # Trigger suction here
-        self.PICK_Z = -0.313     # Hard limit
-        self.PLACE_POS = [0.15, 0.0, -0.20]
+        self.PRE_PICK_Z = -0.300  # Suction triggers here
+        self.PICK_Z = -0.311      # Hard floor limit
+        self.PLACE_POS = [0.0, 0.18, -0.242]
         
-        # Camera params (800x800)
+        # Camera (800x800)
         self.CAM_CENTER = (400, 400)
-        self.CENTER_TOL = 15  # pixels
+        self.CENTER_TOL = 20  # pixels - slightly larger tolerance
         
-        # Camera Offset (Distance from Suction Cup to Camera Lens)
-        # If Camera is +X relative to Suction, we must move Robot +X to bring Suction to object.
-        self.CAMERA_OFFSET_X = 0.02
+        # Camera offset (suction cup is 2cm behind camera in X)
+        self.CAMERA_OFFSET_X = 0.01
         self.CAMERA_OFFSET_Y = 0.0
 
-        # Motion params
-        self.K_P = 0.010  
-        self.STEP_XY = 0.002 
-        self.STEP_Z = 0.1
+        # === XY MOTION PARAMS (PID Control) ===
+        self.K_P = 0.00003       # Proportional gain
+        self.K_I = 0.000001       # Integral gain (eliminates steady-state error)
+        self.K_D = 0.000035      # Derivative gain (damping)
+        self.MAX_XY_SPEED = 0.008 # Max XY velocity per tick
+        self.STEP_Z = 0.05       # Descent speed (slower)
         
-        # Stability / Timeout
-        self.centering_counter = 0
-        self.MAX_CENTERING_ITERS = 400 
+        # PID state
+        self.prev_err_x = 0
+        self.prev_err_y = 0
+        self.integral_x = 0
+        self.integral_y = 0
+        self.INTEGRAL_MAX = 5000  # Anti-windup limit
+        
+        # === WORKSPACE LIMITS ===
+        self.WS_X_MIN, self.WS_X_MAX = -0.12, 0.12
+        self.WS_Y_MIN, self.WS_Y_MAX = -0.12, 0.12
+        
+        self.get_logger().info("Camera PNP V3 Started")
 
+    # ==================== IMAGE PROCESSING ====================
+    
     def image_callback(self, msg):
         try:
             self.current_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
@@ -76,10 +88,10 @@ class CameraPNP_V2(Node):
             self.get_logger().error(f"CV Error: {e}")
 
     def detect_object(self, image):
-        """Detect red object and find its center."""
+        """Detect red object center."""
         hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
         
-        # Red color (wraps around 0/180)
+        # Red mask
         mask1 = cv2.inRange(hsv, np.array([0, 100, 100]), np.array([10, 255, 255]))
         mask2 = cv2.inRange(hsv, np.array([170, 100, 100]), np.array([180, 255, 255]))
         mask = mask1 | mask2
@@ -91,212 +103,215 @@ class CameraPNP_V2(Node):
         
         if contours:
             c = max(contours, key=cv2.contourArea)
-            area = cv2.contourArea(c)
-            if area > 300:
-                self.target_found = True
-                self.box_area = area
+            if cv2.contourArea(c) > 300:
                 M = cv2.moments(c)
                 if M["m00"] > 0:
-                    cx = int(M["m10"] / M["m00"])
-                    cy = int(M["m01"] / M["m00"])
-                    self.box_center_px = (cx, cy)
-                return
+                    self.box_center_px = (int(M["m10"]/M["m00"]), int(M["m01"]/M["m00"]))
+                    self.target_found = True
+                    return
         
         self.target_found = False
-        self.box_area = 0
 
     def display_image(self):
-        """Display annotated camera view."""
         if self.current_image is None:
             return
             
         img = self.current_image.copy()
         h, w = img.shape[:2]
         
-        # Draw crosshair at center
-        cv2.line(img, (w//2 - 30, h//2), (w//2 + 30, h//2), (0, 255, 0), 2)
-        cv2.line(img, (w//2, h//2 - 30), (w//2, h//2 + 30), (0, 255, 0), 2)
+        # Crosshair
+        cv2.line(img, (w//2-30, h//2), (w//2+30, h//2), (0,255,0), 2)
+        cv2.line(img, (w//2, h//2-30), (w//2, h//2+30), (0,255,0), 2)
         
-        # Draw target if found
+        # Target
         if self.target_found:
             cx, cy = self.box_center_px
-            cv2.circle(img, (cx, cy), 10, (0, 0, 255), -1)
-            cv2.line(img, (w//2, h//2), (cx, cy), (255, 0, 0), 2)
+            cv2.circle(img, (cx, cy), 10, (0,0,255), -1)
+            cv2.line(img, (w//2, h//2), (cx, cy), (255,0,0), 2)
         
-        # State display
-        color = (0, 255, 0) if self.target_found else (0, 0, 255)
-        cv2.putText(img, f"State: {self.state}", (10, h - 60), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2)
+        # Info
+        cv2.putText(img, f"State: {self.state}", (10, h-60), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,255,0), 2)
         cv2.putText(img, f"Pos: ({self.pos[0]:.3f}, {self.pos[1]:.3f}, {self.pos[2]:.3f})", 
-                   (10, h - 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+                   (10, h-30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255,255,255), 2)
         
-        cv2.imshow("Camera PNP V2", img)
-        cv2.waitKey(1)
+        # Publish annotated image to ROS2 topic
+        try:
+            annotated_msg = self.bridge.cv2_to_imgmsg(img, "bgr8")
+            self.image_pub.publish(annotated_msg)
+        except Exception as e:
+            self.get_logger().error(f"Image publish error: {e}")
 
-    def control_loop(self):
-        """State machine control."""
+    # ==================== XY TRACKING ====================
+    
+    def track_xy(self):
+        """
+        PID control for XY tracking.
+        P = response speed, I = eliminates steady-state error, D = damping
+        Returns True if centered within tolerance.
+        """
+        if not self.target_found:
+            return False
         
+        # Pixel error
+        err_px_x = self.box_center_px[0] - self.CAM_CENTER[0]
+        err_px_y = self.box_center_px[1] - self.CAM_CENTER[1]
+        
+        # Derivative (change in error)
+        d_err_x = err_px_x - self.prev_err_x
+        d_err_y = err_px_y - self.prev_err_y
+        
+        # Integral (accumulated error) with anti-windup
+        self.integral_x += err_px_x
+        self.integral_y += err_px_y
+        self.integral_x = np.clip(self.integral_x, -self.INTEGRAL_MAX, self.INTEGRAL_MAX)
+        self.integral_y = np.clip(self.integral_y, -self.INTEGRAL_MAX, self.INTEGRAL_MAX)
+        
+        # Store for next iteration
+        self.prev_err_x = err_px_x
+        self.prev_err_y = err_px_y
+        
+        # PID control: output = Kp*error + Ki*integral + Kd*derivative
+        # Camera-to-Robot mapping: Camera X+ = Robot Y-, Camera Y+ = Robot X-
+        control_x = -err_px_y * self.K_P - self.integral_y * self.K_I - d_err_y * self.K_D
+        control_y = -err_px_x * self.K_P - self.integral_x * self.K_I - d_err_x * self.K_D
+        
+        # Clamp velocity
+        speed = np.hypot(control_x, control_y)
+        if speed > self.MAX_XY_SPEED:
+            control_x = control_x / speed * self.MAX_XY_SPEED
+            control_y = control_y / speed * self.MAX_XY_SPEED
+        
+        # Apply
+        self.pos[0] += control_x
+        self.pos[1] += control_y
+        
+        # Workspace limits
+        self.pos[0] = np.clip(self.pos[0], self.WS_X_MIN, self.WS_X_MAX)
+        self.pos[1] = np.clip(self.pos[1], self.WS_Y_MIN, self.WS_Y_MAX)
+        
+        # Reset integral when centered (prevent windup)
+        if abs(err_px_x) < self.CENTER_TOL and abs(err_px_y) < self.CENTER_TOL:
+            self.integral_x = 0
+            self.integral_y = 0
+            return True
+        return False
+
+    # ==================== STATE MACHINE ====================
+    
+    def control_loop(self):
+        
+        # ===== SEARCH =====
         if self.state == "SEARCH":
-            self.pos[2] = self.SAFE_Z
-            self.centering_counter = 0
+            self.pos = [0.0, 0.0, self.SAFE_Z]
             self.publish_pose()
             
             if self.target_found:
-                self.get_logger().info("Target found → CENTERING")
-                self.state = "CENTERING"
-                
-        elif self.state == "CENTERING":
+                self.get_logger().info("Target found → TRACK")
+                self.state = "TRACK"
+                self.state_timer = 0
+        
+        # ===== TRACK (XY Centering) =====
+        elif self.state == "TRACK":
             if not self.target_found:
-                self.state = "SEARCH"
+                self.state_timer += 1
+                if self.state_timer > 20:  # Lost for 1 sec
+                    self.get_logger().warn("Target lost → SEARCH")
+                    self.state = "SEARCH"
                 return
             
-            self.centering_counter += 1
-            if self.centering_counter > self.MAX_CENTERING_ITERS:
-                 self.get_logger().warn("Centering Timeout! Resetting search.")
-                 self.state = "SEARCH"
-                 return
-
-            err_x = self.box_center_px[0] - self.CAM_CENTER[0]
-            err_y = self.box_center_px[1] - self.CAM_CENTER[1]
-            
-            # Map Pixels to Robot Motion (Camera 90deg rotated relative to Base)
-            dx = -err_y * self.K_P
-            dy = -err_x * self.K_P
-            
-            # Clamp Speed
-            mag = np.hypot(dx, dy)
-            if mag > self.STEP_XY:
-                dx, dy = dx/mag * self.STEP_XY, dy/mag * self.STEP_XY
-            
-            self.pos[0] += dx
-            self.pos[1] += dy
+            self.state_timer = 0
+            centered = self.track_xy()
             self.publish_pose()
             
-            if abs(err_x) < self.CENTER_TOL and abs(err_y) < self.CENTER_TOL:
-                self.get_logger().info("Camera Centered → ALIGN SUCTION")
-                
-                # <--- FIXED: Lock the target ONCE here.
-                # If we calculated this inside the ALIGN_SUCTION loop, 
-                # self.pos would change and the target would run away infinitely.
-                self.suction_target = [
-                    self.pos[0] + self.CAMERA_OFFSET_X, 
-                    self.pos[1] + self.CAMERA_OFFSET_Y, 
-                    self.pos[2]
-                ]
-                self.state = "ALIGN_SUCTION"
+            if centered:
+                self.get_logger().info("Centered → DESCEND")
+                self.state = "DESCEND"
                 self.state_timer = 0
-
-        elif self.state == "ALIGN_SUCTION":
-            # Move to the locked target using visual servo loop logic (slow but accurate)
-            # OR switch to direct open-loop command here if we trust the IK?
-            # User wants speed. Let's use servo move for this short valid alignment,
-            # but for long moves (LIFT/PLACE) we jump.
-            
-            reached = self.move_towards(self.suction_target, step_mult=1.0)
-            self.publish_pose()
-            
-            self.state_timer += 1
-            if reached:
-                 self.get_logger().info(f"Suction Aligned (Offset applied) → DESCEND")
-                 self.state = "DESCEND"
-                 self.state_timer = 0
-                
+        
+        # ===== DESCEND (with active tracking) =====
         elif self.state == "DESCEND":
-            # Blind descent
+            # Continue tracking while descending
+            if self.target_found:
+                self.track_xy()
+            
+            # Descend
             self.pos[2] -= self.STEP_Z
             
-            # 1. Trigger suction just before hitting bottom
-            if self.pos[2] <= self.PRE_PICK_Z:
-                 if self.state_timer == 0:
-                     self.get_logger().info("Suction ON (Pre-contact)")
-                     self.suction(True)
-                     self.state_timer = 1 
-
-            # 2. Reached bottom limit
+            # Trigger suction at PRE_PICK_Z
+            if self.pos[2] <= self.PRE_PICK_Z and self.state_timer == 0:
+                self.get_logger().info("Suction ON")
+                self.suction(True)
+                self.state_timer = 1
+            
+            # Hard limit
             if self.pos[2] <= self.PICK_Z:
-                self.pos[2] = self.PICK_Z # Clamp
-                self.publish_pose()
+                self.pos[2] = self.PICK_Z
                 self.state = "PICK"
                 self.state_timer = 0
-            else:
-                self.publish_pose()
-                
+            
+            self.publish_pose()
+        
+        # ===== PICK (dwell) =====
         elif self.state == "PICK":
             self.state_timer += 1
-            # Wait a moment for suction to seal
-            if self.state_timer > 20: 
+            if self.state_timer > 15:
                 self.state = "LIFT"
                 self.state_timer = 0
-                
-        # --- FAST OPEN LOOP SECTION ---
-        # Instead of incremental steps, we send the final target and wait.
-                
+        
+        # ===== LIFT =====
         elif self.state == "LIFT":
-            # Smooth Lift to Safe Z
-            target = [self.pos[0], self.pos[1], self.SAFE_Z]
-            reached = self.move_towards(target, step_mult=2.0) # 2x speed for lift
+            self.pos[2] += 0.01  # Fast lift
+            if self.pos[2] >= self.SAFE_Z:
+                self.pos[2] = self.SAFE_Z
+                self.state = "PLACE"
+            self.publish_pose()
+        
+        # ===== PLACE =====
+        elif self.state == "PLACE":
+            # Move towards place position
+            reached = self.move_towards(self.PLACE_POS)
             self.publish_pose()
             
             if reached:
-                self.state = "PLACE"
-                self.get_logger().info("Lifted. Moving to Place...")
-
-        elif self.state == "PLACE":
-             # Smooth Move to Place
-             reached = self.move_towards(self.PLACE_POS, step_mult=2.0)
-             self.publish_pose()
-             
-             if reached:
-                 # Wait for controller lag to catch up
-                 self.state_timer += 1
-                 if self.state_timer > 20: # 1.0s wait
-                     self.state = "DROP"
-                     self.get_logger().info("Reached Destination (Stabilized) → DROP")
-                     self.state_timer = 0
-                
+                self.state_timer += 1
+                if self.state_timer > 15:
+                    self.state = "DROP"
+                    self.state_timer = 0
+        
+        # ===== DROP =====
         elif self.state == "DROP":
-            self.state_timer += 1
-            if self.state_timer == 1:
+            if self.state_timer == 0:
                 self.get_logger().info("Suction OFF")
                 self.suction(False)
-                
-                # Report Drop
                 msg = String()
                 msg.data = "DROPPED"
                 self.status_pub.publish(msg)
-                
+            
+            self.state_timer += 1
             if self.state_timer > 10:
                 self.state = "RESET"
                 self.state_timer = 0
-                
+        
+        # ===== RESET =====
         elif self.state == "RESET":
-             if self.state_timer == 0:
-                 self.pos = [0.0, 0.0, self.SAFE_Z] # Jump to Home
-                 self.publish_pose()
-                 self.state_timer += 1
-                 self.get_logger().info("Fast Return...")
-                 
-             elif self.state_timer > 20:
-                 self.get_logger().info("Reset complete → SEARCH")
-                 self.target_found = False
-                 self.state = "SEARCH"
-                 self.state_timer = 0
-             else:
-                 self.state_timer += 1
+            self.pos = [0.0, 0.0, self.SAFE_Z]
+            self.publish_pose()
+            self.state_timer += 1
+            if self.state_timer > 20:
+                self.get_logger().info("Reset complete → SEARCH")
+                self.target_found = False
+                self.state = "SEARCH"
+                self.state_timer = 0
 
-    def move_towards(self, target, step_mult=1.0):
-        """Incremental move (for visual servoing phases)."""
+    # ==================== HELPERS ====================
+    
+    def move_towards(self, target, speed=0.005):
+        """Move incrementally towards target. Returns True when reached."""
         done = True
         for i in range(3):
             diff = target[i] - self.pos[i]
-            
-            # Base steps
-            s = self.STEP_XY if i < 2 else self.STEP_Z
-            s *= step_mult
-            
-            if abs(diff) > s:
-                 # Clamp step to avoid overshooting
-                self.pos[i] += np.sign(diff) * s
+            if abs(diff) > speed:
+                self.pos[i] += np.sign(diff) * speed
                 done = False
             else:
                 self.pos[i] = target[i]
@@ -324,15 +339,12 @@ class CameraPNP_V2(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = CameraPNP_V2()
+    node = CameraPNP()
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
         pass
-    except Exception as e:
-        node.get_logger().error(f"Error: {e}")
     finally:
-        cv2.destroyAllWindows()
         if rclpy.ok():
             node.destroy_node()
             rclpy.shutdown()

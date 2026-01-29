@@ -75,19 +75,6 @@ def generate_launch_description():
         ],
     )
 
-    gz_spawn_box = Node(
-        package='ros_gz_sim',
-        executable='create',
-        output='screen',
-        arguments=[
-            '-string', box_desc,
-            '-name', 'box',
-            '-allow_renaming', 'false',
-            '-x', '0', '-y', '0', '-z', '0.1',
-            '-R', '0.0', '-P', '0.0', '-Y', '0.0',
-        ],
-    )
-
     # --- 5. Bridge ---
     bridge = Node(
         package='ros_gz_bridge',
@@ -114,7 +101,6 @@ def generate_launch_description():
         gazebo_plugin_path,
         gz_sim,
         gz_spawn_entity,
-        gz_spawn_box,
         bridge,
         rviz2, 
     ])

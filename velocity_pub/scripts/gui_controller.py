@@ -5,6 +5,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.executors import MultiThreadedExecutor
 from geometry_msgs.msg import Pose, Twist
+from std_msgs.msg import Bool, Float64
 
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, 
                              QSlider, QLabel, QGroupBox, QPushButton, QCheckBox)
@@ -37,6 +38,8 @@ class DeltaGUI(QWidget):
         self.node = rclpy.create_node('delta_gui_publisher')
         self.publisher = self.node.create_publisher(Pose, '/delta/target_pose', 10)
         self.speed_publisher = self.node.create_publisher(Twist, '/delta/speed_params', 10)
+        self.suction_pub = self.node.create_publisher(Bool, '/suction/command', 10)
+        self.conveyor_pub = self.node.create_publisher(Float64, '/conveyor/cmd_vel', 10)
         
         # --- THREADING FIX ---
         # Instead of a QTimer calling spin_once(), we run the spin loop
@@ -120,16 +123,38 @@ class DeltaGUI(QWidget):
         speed_group = QGroupBox("Speed Settings")
         speed_layout = QVBoxLayout()
 
-        self.sl_lin_speed, self.lbl_lin_speed = self.create_slider("Linear Speed (m/s)", 10, 200, 50, speed_layout)
+        self.sl_lin_speed, self.lbl_lin_speed = self.create_slider("Linear Speed (m/s)", 500, 1000, 300, speed_layout)
         self.sl_ang_speed, self.lbl_ang_speed = self.create_slider("Angular Speed (rad/s)", 1, 50, 10, speed_layout)
 
         speed_group.setLayout(speed_layout)
         main_layout.addWidget(speed_group)
 
-        # --- Reset Button ---
         self.btn_reset = QPushButton("Home Position (H)")
         self.btn_reset.clicked.connect(self.reset_sliders)
         main_layout.addWidget(self.btn_reset)
+        
+        # --- Conveyor & Suction Controls ---
+        ctrl_group = QGroupBox("Conveyor & Suction")
+        ctrl_layout = QHBoxLayout()
+        
+        self.btn_conv_start = QPushButton("▶ Start Belt")
+        self.btn_conv_start.clicked.connect(lambda: self.set_conveyor(-0.05))
+        ctrl_layout.addWidget(self.btn_conv_start)
+        
+        self.btn_conv_stop = QPushButton("⏹ Stop Belt")
+        self.btn_conv_stop.clicked.connect(lambda: self.set_conveyor(0.0))
+        ctrl_layout.addWidget(self.btn_conv_stop)
+        
+        self.btn_suction_on = QPushButton("🔴 Suction ON")
+        self.btn_suction_on.clicked.connect(lambda: self.set_suction(True))
+        ctrl_layout.addWidget(self.btn_suction_on)
+        
+        self.btn_suction_off = QPushButton("⚪ Suction OFF")
+        self.btn_suction_off.clicked.connect(lambda: self.set_suction(False))
+        ctrl_layout.addWidget(self.btn_suction_off)
+        
+        ctrl_group.setLayout(ctrl_layout)
+        main_layout.addWidget(ctrl_group)
 
         self.setLayout(main_layout)
         self.setFocusPolicy(Qt.StrongFocus)
@@ -264,6 +289,18 @@ class DeltaGUI(QWidget):
         speed_msg.linear.x = self.sl_lin_speed.value() / self.SPEED_SCALE
         speed_msg.angular.z = self.sl_ang_speed.value() / self.ANG_SPEED_SCALE
         self.speed_publisher.publish(speed_msg)
+    
+    def set_conveyor(self, velocity):
+        msg = Float64()
+        msg.data = velocity
+        self.conveyor_pub.publish(msg)
+        self.node.get_logger().info(f"Conveyor: {velocity}")
+    
+    def set_suction(self, state):
+        msg = Bool()
+        msg.data = state
+        self.suction_pub.publish(msg)
+        self.node.get_logger().info(f"Suction: {'ON' if state else 'OFF'}")
 
     def closeEvent(self, event):
         # Clean shutdown of thread and node
