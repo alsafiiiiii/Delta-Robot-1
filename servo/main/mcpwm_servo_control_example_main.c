@@ -32,6 +32,11 @@ const int SERVO_PINS[NUM_SERVOS] = {2, 4, 5};
 #define SERVO_MIN_DEG 0.0f
 #define SERVO_MAX_DEG 180.0f
 
+// Stability Tuning
+// Mix Factor: 0.0=Linear(Vibration-Free), 1.0=Cubic(Smooth-Jerk)
+// 0.5 blends them: Start/End Velocity is 50% of cruise (Not zero)
+#define HYBRID_FACTOR 0.8f
+
 // UART
 #define UART_NUM UART_NUM_0
 #define BUF_SIZE 1024
@@ -41,10 +46,11 @@ const int SERVO_PINS[NUM_SERVOS] = {2, 4, 5};
 
 // --- DATA STRUCTURES ---
 typedef struct {
-  float current_degree; // Current position
+  float current_degree; // Actual Output Position
+  float start_degree;   // Position at start of move
   float target_degree;  // Final destination
-  float step_per_tick;  // Change per 20ms tick
-  int remaining_ticks;  // Ticks left in current move
+  int current_tick;     // Current progress (0 to total_ticks)
+  int total_ticks;      // Duration of move in ticks
   mcpwm_cmpr_handle_t comparator;
 } ServoState;
 
@@ -59,17 +65,36 @@ float deg_to_us(float deg) {
 }
 
 // --- MOTION TIMER ---
+// --- MOTION TIMER ---
+// --- MOTION TIMER ---
 static void motion_timer_callback(void *arg) {
   for (int i = 0; i < NUM_SERVOS; i++) {
-    if (servos[i].remaining_ticks > 0) {
-      // Linear interpolation
-      servos[i].current_degree += servos[i].step_per_tick;
-      servos[i].remaining_ticks--;
+    if (servos[i].current_tick < servos[i].total_ticks) {
+      servos[i].current_tick++;
+
+      // Normalized Time (0.0 to 1.0)
+      float t = (float)servos[i].current_tick / (float)servos[i].total_ticks;
+
+      // Cubic Ease-In/Ease-Out: 3t^2 - 2t^3
+      // Forces zero velocity at start and end
+      float cubic = (3 * t * t) - (2 * t * t * t);
+
+      // Linear: t
+      float linear = t;
+
+      // Hybrid Blend
+      float ease = (1.0f - HYBRID_FACTOR) * linear + (HYBRID_FACTOR)*cubic;
+
+      // Interpolate
+      float spread = servos[i].target_degree - servos[i].start_degree;
+      servos[i].current_degree = servos[i].start_degree + (spread * ease);
+
     } else {
-      // Ensure we end exactly at target
+      // Ensure we hold exactly at target
       servos[i].current_degree = servos[i].target_degree;
     }
 
+    // Write to Hardware
     uint32_t us = (uint32_t)deg_to_us(servos[i].current_degree);
     mcpwm_comparator_set_compare_value(servos[i].comparator, us);
   }
@@ -105,17 +130,17 @@ void process_command(char *line) {
           if (duration_ms < 20)
             duration_ms = 20;
 
-          // Calculate Step
+          // Calculate Steps for S-Curve
           int ticks = duration_ms * CONTROL_FREQ_HZ / 1000;
-          float diff = target_deg - servos[servo_idx].current_degree;
 
+          servos[servo_idx].start_degree = servos[servo_idx].current_degree;
           servos[servo_idx].target_degree = target_deg;
-          servos[servo_idx].remaining_ticks = ticks;
-          servos[servo_idx].step_per_tick = diff / (float)ticks;
+          servos[servo_idx].total_ticks = ticks;
+          servos[servo_idx].current_tick = 0;
 
-          // ESP_LOGI(TAG, "S%d -> %.1f deg in %d ms (Step: %.4f)",
-          //          servo_idx, target_deg, duration_ms,
-          //          servos[servo_idx].step_per_tick);
+          // Debug Log
+          // ESP_LOGI(TAG, "S%d -> %.1f deg in %d ms", servo_idx, target_deg,
+          // duration_ms);
         }
       }
     }
@@ -191,8 +216,10 @@ static void setup_mcpwm() {
 
     // Initial State
     servos[i].current_degree = 90.0f; // Assume center start
+    servos[i].start_degree = 90.0f;
     servos[i].target_degree = 90.0f;
-    servos[i].remaining_ticks = 0;
+    servos[i].total_ticks = 0;
+    servos[i].current_tick = 0;
 
     mcpwm_comparator_set_compare_value(servos[i].comparator,
                                        (uint32_t)deg_to_us(90.0f));

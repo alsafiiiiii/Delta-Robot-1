@@ -6,7 +6,7 @@ from rclpy.node import Node
 from geometry_msgs.msg import Pose, Twist
 
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, 
-                             QSlider, QLabel, QGroupBox, QPushButton)
+                             QSlider, QLabel, QGroupBox, QPushButton, QCheckBox)
 from PyQt5.QtCore import Qt, QTimer
 
 class DeltaGUI(QWidget):
@@ -30,14 +30,45 @@ class DeltaGUI(QWidget):
         self.ROT_SCALE = 100.0    # Slider 314 -> 3.14 rad
         self.SPEED_SCALE = 1000.0 # Slider 100 -> 0.1 m/s
         self.ANG_SPEED_SCALE = 10.0 # Slider 10 -> 1.0 rad/s
-
+        
+        # Keyboard control
+        self.keyboard_enabled = False
+        self.KEYBOARD_STEP = 5  # mm per keypress (will be multiplied by POS_SCALE inverse)
+        
         self.init_ui()
 
     def init_ui(self):
         self.setWindowTitle('Delta Robot 5-DOF Control')
-        self.setGeometry(100, 100, 400, 600)
+        self.setGeometry(100, 100, 400, 700)
 
         main_layout = QVBoxLayout()
+
+        # --- Keyboard Control Toggle ---
+        kb_group = QGroupBox("Keyboard Control")
+        kb_layout = QVBoxLayout()
+        
+        self.kb_checkbox = QCheckBox("Enable WASD + Space/Ctrl Navigation")
+        self.kb_checkbox.stateChanged.connect(self.toggle_keyboard_mode)
+        kb_layout.addWidget(self.kb_checkbox)
+        
+        kb_help = QLabel("W/S: Y axis | A/D: X axis | Space: Up | Shift: Down")
+        kb_help.setStyleSheet("color: gray; font-size: 10px;")
+        kb_layout.addWidget(kb_help)
+        
+        # Step size slider
+        step_container = QHBoxLayout()
+        self.lbl_step = QLabel(f"Step Size: {self.KEYBOARD_STEP} mm")
+        self.sl_step = QSlider(Qt.Horizontal)
+        self.sl_step.setMinimum(1)
+        self.sl_step.setMaximum(20)
+        self.sl_step.setValue(5)
+        self.sl_step.valueChanged.connect(self.update_step_size)
+        step_container.addWidget(self.lbl_step)
+        step_container.addWidget(self.sl_step)
+        kb_layout.addLayout(step_container)
+        
+        kb_group.setLayout(kb_layout)
+        main_layout.addWidget(kb_group)
 
         # --- Position Group ---
         pos_group = QGroupBox("Position (Meters)")
@@ -65,7 +96,6 @@ class DeltaGUI(QWidget):
         self.sl_yaw, self.lbl_yaw = self.create_slider("Yaw (Spin)", -314, 314, 0, rot_layout)
 
         rot_group.setLayout(rot_layout)
-        rot_group.setLayout(rot_layout)
         main_layout.addWidget(rot_group)
 
         # --- Speed Group ---
@@ -86,9 +116,62 @@ class DeltaGUI(QWidget):
         main_layout.addWidget(self.btn_reset)
 
         self.setLayout(main_layout)
+        
+        # Enable keyboard focus
+        self.setFocusPolicy(Qt.StrongFocus)
 
         # Trigger initial publish
         self.update_command()
+
+    def toggle_keyboard_mode(self, state):
+        self.keyboard_enabled = (state == Qt.Checked)
+        if self.keyboard_enabled:
+            self.setFocus()
+            self.node.get_logger().info("Keyboard control ENABLED")
+        else:
+            self.node.get_logger().info("Keyboard control DISABLED")
+    
+    def update_step_size(self, value):
+        self.KEYBOARD_STEP = value
+        self.lbl_step.setText(f"Step Size: {value} mm")
+
+    def keyPressEvent(self, event):
+        """Handle keyboard input for WASD navigation."""
+        if not self.keyboard_enabled:
+            super().keyPressEvent(event)
+            return
+        
+        # Step in slider units (mm -> slider scale)
+        step = self.KEYBOARD_STEP  # Already in mm, slider is in mm scale (1 unit = 1mm)
+        
+        key = event.key()
+        
+        if key == Qt.Key_W:
+            # Forward (+Y)
+            new_val = min(self.sl_y.maximum(), self.sl_y.value() + step)
+            self.sl_y.setValue(new_val)
+        elif key == Qt.Key_S:
+            # Backward (-Y)
+            new_val = max(self.sl_y.minimum(), self.sl_y.value() - step)
+            self.sl_y.setValue(new_val)
+        elif key == Qt.Key_A:
+            # Left (-X)
+            new_val = max(self.sl_x.minimum(), self.sl_x.value() - step)
+            self.sl_x.setValue(new_val)
+        elif key == Qt.Key_D:
+            # Right (+X)
+            new_val = min(self.sl_x.maximum(), self.sl_x.value() + step)
+            self.sl_x.setValue(new_val)
+        elif key == Qt.Key_Space:
+            # Up (+Z, but Z is negative so we go towards less negative)
+            new_val = min(self.sl_z.maximum(), self.sl_z.value() + step)
+            self.sl_z.setValue(new_val)
+        elif key == Qt.Key_Shift:
+            # Down (-Z, more negative)
+            new_val = max(self.sl_z.minimum(), self.sl_z.value() - step)
+            self.sl_z.setValue(new_val)
+        else:
+            super().keyPressEvent(event)
 
     def create_slider(self, label_text, min_val, max_val, default_val, parent_layout):
         """Helper to create a standardized slider block"""

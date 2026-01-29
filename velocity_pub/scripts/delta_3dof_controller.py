@@ -4,11 +4,8 @@ from rclpy.node import Node
 from geometry_msgs.msg import Pose, Twist
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from builtin_interfaces.msg import Duration
-import numpy as np
-from visual_kinematics.RobotDelta import RobotDelta
-from visual_kinematics.Frame import Frame
 import math
-from quintic_trajectory import QuinticGenerator
+from delta_ik import DeltaIK
 
 def quaternion_to_euler(x, y, z, w):
     t0 = +2.0 * (w * x + y * z)
@@ -28,13 +25,16 @@ class SmoothDeltaController(Node):
         super().__init__('smooth_delta_controller')
         
         # --- SAFETY SETTINGS ---
-        # Geometry
-        self.robot = RobotDelta(np.array([0.104, 0.040, 0.105, 0.205]))
+        # Geometry (using pure Python IK)
+        self.ik = DeltaIK()
+        
+        # Direct mode response time (instant)
+        self.DIRECT_DURATION_MS = 20  # 20ms for immediate response
         
         # Publishers / Subscribers
         self.joint_pub = self.create_publisher(JointTrajectory, '/model/delta_robot/joint_trajectory', 10)
         
-        # UPDATED: Subscribe to Cartesian Trajectory (Target + Duration)
+        # Time-encoded trajectory (for G-code)
         self.cart_sub = self.create_subscription(
             JointTrajectory, 
             '/delta/cartesian_trajectory', 
@@ -42,46 +42,91 @@ class SmoothDeltaController(Node):
             10
         )
         
-        self.get_logger().info('Smooth Controller Started (Event-Driven Mode).')
+        # DIRECT MODE: Subscribe to target_pose for GUI/joystick (bypasses time encoding)
+        self.pose_sub = self.create_subscription(
+            Pose,
+            '/delta/target_pose',
+            self.direct_pose_callback,
+            10
+        )
+        
+        self.get_logger().info('Smooth Controller Started (Dual Mode: Trajectory + Direct).')
 
-    def trajectory_callback(self, msg):
-        if not msg.points: return
-        
-        # 1. Extract Target (Cartesian)
-        point = msg.points[0]
-        x, y, z = point.positions[0:3]
-        duration = point.time_from_start
-        
+    def direct_pose_callback(self, msg):
+        """Direct mode: Immediately forward pose to joints (no time encoding)."""
         try:
-            # 2. Compute IK (Joint Angles)
-            wrist_frame = Frame.from_euler_3(np.array([0., 0., 0.]), np.array([[x], [y], [z]]))
-            joint_angles = self.robot.inverse(wrist_frame).flatten()
-            t1, t2, t3 = joint_angles
+            x = msg.position.x
+            y = msg.position.y
+            z = msg.position.z
             
-            # Simple assumption for wrist orientation (Face down)
-            tilt = 0.0
-            spin = 0.0
+            # Extract orientation (for tilt/spin if needed)
+            roll, pitch, yaw = quaternion_to_euler(
+                msg.orientation.x, msg.orientation.y, 
+                msg.orientation.z, msg.orientation.w
+            )
+            
+            # Compute IK
+            t1, t2, t3 = self.ik.inverse(x, y, z)
+            
+            # Orientation mapping
+            tilt = roll
+            spin = yaw
             b1 = tilt + 2 * spin
             b2 = 2 * spin - tilt
             
-            # 3. Construct Output Message (Joints + Duration)
+            # Create instant trajectory message
             out_msg = JointTrajectory()
             out_msg.joint_names = ['jbf1', 'jbf2', 'jbf3', 'Bevelj1', 'Bevelj2', 'Tj1', 'BeveljEE']
             
             out_point = JointTrajectoryPoint()
             out_point.positions = [float(t1), float(t2), float(t3), float(b1), float(b2), float(tilt), float(spin)]
-            out_point.time_from_start = duration  # Pass-through duration
-            
+            out_point.time_from_start = Duration(sec=0, nanosec=self.DIRECT_DURATION_MS * 1_000_000)
             out_msg.points.append(out_point)
             
-            # 4. Forward immediately
             self.joint_pub.publish(out_msg)
             
-            sec = duration.sec + duration.nanosec * 1e-9
-            self.get_logger().info(f"Forwarding Move: [{t1:.2f}, {t2:.2f}, {t3:.2f}] T={sec:.3f}s")
-            
         except Exception as e:
-            self.get_logger().warn(f"IK Error for ({x},{y},{z}): {e}")
+            self.get_logger().warn(f"Direct IK Error: {e}")
+
+    def trajectory_callback(self, msg):
+        """Time-encoded mode: Process full trajectory with durations (for G-code)."""
+        if not msg.points: return
+        
+        out_msg = JointTrajectory()
+        out_msg.joint_names = ['jbf1', 'jbf2', 'jbf3', 'Bevelj1', 'Bevelj2', 'Tj1', 'BeveljEE']
+        
+        try:
+            for point in msg.points:
+                # 1. Extract Cartesian
+                x, y, z = point.positions[0:3]
+                duration = point.time_from_start
+                
+                # 2. Compute IK
+                t1, t2, t3 = self.ik.inverse(x, y, z)
+                
+                # Orientation (Face down)
+                tilt = 0.0
+                spin = 0.0
+                b1 = tilt + 2 * spin
+                b2 = 2 * spin - tilt
+                
+                # 3. Append Joint Point
+                out_point = JointTrajectoryPoint()
+                out_point.positions = [float(t1), float(t2), float(t3), float(b1), float(b2), float(tilt), float(spin)]
+                out_point.time_from_start = duration
+                out_msg.points.append(out_point)
+
+            # 4. Publish Full Trajectory
+            self.joint_pub.publish(out_msg)
+            
+            # Log summary
+            if out_msg.points:
+                last_t = out_msg.points[-1].time_from_start
+                sec = last_t.sec + last_t.nanosec * 1e-9
+                self.get_logger().info(f"Forwarding Path: {len(out_msg.points)} pts, Total T={sec:.3f}s")
+                
+        except Exception as e:
+            self.get_logger().warn(f"IK Error: {e}")
 
 def main(args=None):
     rclpy.init(args=args)

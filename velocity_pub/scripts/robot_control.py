@@ -4,6 +4,7 @@ from rclpy.node import Node
 from trajectory_msgs.msg import JointTrajectory
 import serial
 import math
+import time
 
 class EspSerialBridge(Node):
     def __init__(self):
@@ -49,41 +50,61 @@ class EspSerialBridge(Node):
         return us
 
     def traj_callback(self, msg):
-        if msg.points:
-            # 1. Get Radians
-            rads = msg.points[0].positions[0:3]
-            duration = msg.points[0].time_from_start
+        if not msg.points: return
+        
+        # Sort by time just in case
+        # sorted_points = sorted(msg.points, key=lambda p: p.time_from_start.sec + p.time_from_start.nanosec*1e-9)
+        
+        start_time = self.get_clock().now()
+        
+        for i, point in enumerate(msg.points):
+            # 1. Get Duration logic
+            # msg.points[i].time_from_start is ABSOLUTE from start of trajectory
+            # We need DELTA from previous point
             
-            # Duration in Milliseconds
-            duration_ms = int(duration.sec * 1000 + duration.nanosec / 1e6)
-            if duration_ms < 20: duration_ms = 20 # Safety floor
+            t_abs_sec = point.time_from_start.sec + point.time_from_start.nanosec * 1e-9
             
-            # 2. Convert to Degrees
+            if i == 0:
+                dt = t_abs_sec
+            else:
+                prev = msg.points[i-1].time_from_start
+                t_prev_sec = prev.sec + prev.nanosec * 1e-9
+                dt = t_abs_sec - t_prev_sec
+            
+            # Duration in ms
+            duration_ms = int(dt * 1000)
+            if duration_ms < 20: duration_ms = 20
+            
+            # 2. Extract Angles
+            rads = point.positions[0:3]
             deg1 = math.degrees(rads[0])
             deg2 = math.degrees(rads[1])
             deg3 = math.degrees(rads[2])
             
-            # 3. Apply Calibration/Offset if needed (Currently handled by FW or IK)
-            # Just clamping for safety before sending
+            # 3. Cleanse
             deg1 = max(self.MIN_DEG, min(self.MAX_DEG, deg1))
             deg2 = max(self.MIN_DEG, min(self.MAX_DEG, deg2))
             deg3 = max(self.MIN_DEG, min(self.MAX_DEG, deg3))
             
-            # 4. Formulate Interpolation Commands
-            # Protocol: T<idx>:<deg> D:<ms>
-            
+            # 4. Formulate Command
             cmds = [
                 f"T0:{deg1:.2f} D:{duration_ms}\n",
                 f"T1:{deg2:.2f} D:{duration_ms}\n",
                 f"T2:{deg3:.2f} D:{duration_ms}\n"
             ]
             
+            # 5. Send
             try:
                 for cmd in cmds:
                     self.ser.write(cmd.encode('utf-8'))
-                    # self.get_logger().info(f"Sent: {cmd.strip()}")
             except Exception as e:
                 self.get_logger().error(f"Write Failed: {e}")
+                
+            # 6. Wait for execution to finish before sending next point
+            # This creates the "Streaming" behavior
+            # We sleep for `dt` seconds
+            # Note: This blocks the callback, but that's what we want for this simple architecture
+            time.sleep(dt)
 
 def main(args=None):
     rclpy.init(args=args)

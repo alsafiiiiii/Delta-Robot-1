@@ -6,12 +6,10 @@ Calculates duration based on F (Feedrate in mm/min) and 3D distance.
 """
 import serial
 import time
-import numpy as np
-from visual_kinematics.RobotDelta import RobotDelta
-from visual_kinematics.Frame import Frame
 import math
 import sys
 import os
+from delta_ik import DeltaIK
 
 # Configuration
 SERIAL_PORT = '/dev/ttyUSB0'
@@ -19,15 +17,14 @@ BAUD_RATE = 115200
 DEFAULT_FEEDRATE = 500 # mm/min
 
 # Robot Setup
-robot = RobotDelta(np.array([0.104, 0.040, 0.105, 0.205]))
+ik = DeltaIK()
 
 def compute_ik(x, y, z):
     """Compute servo angles (degrees) for Cartesian position (meters)"""
     try:
-        frame = Frame.from_euler_3(np.array([0., 0., 0.]), np.array([[x], [y], [z]]))
-        angles = robot.inverse(frame).flatten()
+        angles = ik.inverse(x, y, z)
         return [math.degrees(a) for a in angles]
-    except Exception as e:
+    except ValueError as e:
         print(f"IK Error: {e}")
         return None
 
@@ -74,7 +71,7 @@ def run_gcode_file(filename, ser):
     # Initial move to home
     print("Homing...")
     angles = compute_ik(*current_pos)
-    send_move(ser, angles, 500) # Fast homing (0.5s)
+    send_move(ser, angles, 2000) # Fast homing (0.5s)
     
     with open(filename, 'r') as f:
         for line in f:

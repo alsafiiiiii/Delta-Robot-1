@@ -1,107 +1,108 @@
-# High-Performance 3DOF Delta Robot Control System
+# Delta Robot Control Package (velocity_pub)
 
-This workspace contains the complete software stack for controlling a 3DOF Delta Robot with industrial-grade smoothness and precision using standard hobby servos.
+ROS 2 package containing all control nodes, G-code interpreters, and utilities for the Delta Robot.
 
 ## System Architecture
 
-The system operates on a "Brain-Bridge-Muscle" architecture designed to maximize performance and minimize jitter.
+```
+G-Code / GUI / Joystick
+        │
+        ▼
+┌──────────────────────────┐
+│  delta_3dof_controller   │  ← IK solver (using delta_ik.py)
+│  /delta/target_pose      │  ← Direct pose input
+│  /delta/cartesian_traj   │  ← Time-encoded trajectory
+└───────────┬──────────────┘
+            │
+            ▼
+┌──────────────────────────┐
+│     robot_control.py     │  ← Serial @ 115200 baud
+│  Format: T0:deg D:ms     │
+└───────────┬──────────────┘
+            │
+            ▼
+        ESP32 (50Hz)
+```
 
-### 1. The Brain: `delta_3dof_controller.py`
+## Key Scripts
 
-- **Role**: High-level Motion Planner.
-- **Physics**: Generates **Quintic (5th-order) Trajectories** for every move. This ensures Position, Velocity, and Acceleration are continuous (No Jerk).
-- **Update Rate**: **100Hz**.
-- **Output**: Calculates Inverse Kinematics (IK) for every 10ms timestep and publishes Joint Angles.
+### Core Control
 
-### 2. The Bridge: `robot_control.py`
+| Script | Description |
+|--------|-------------|
+| `delta_3dof_controller.py` | Main controller node - handles IK and trajectory |
+| `delta_ik.py` | Pure Python inverse kinematics (no external deps) |
+| `robot_control.py` | Serial bridge to ESP32 |
 
-- **Role**: Communication Gateway.
-- **Protocol**: Serial at **115200 baud**.
-- **Optimization**: Uses a **0.5µs Change Threshold**. It only sends data if the requested move is physically significant, but with enough resolution to utilize the full capability of the servos.
+### Input Sources
 
-### 3. The Muscle: ESP32 Firmware (`src/servo/`)
+| Script | Description |
+|--------|-------------|
+| `delta_gcode_interpreter.py` | G-code file executor |
+| `gui_controller.py` | Interactive GUI with sliders |
+| `joystick_controller.py` | Gamepad/joystick control |
+| `camera_pnp.py` | Vision-based pick and place |
 
-- **Role**: Real-time Motor Drive.
-- **PWM Frequency**: **200Hz** (5ms latency). Standard servos use 50Hz; we overdrive them to 200Hz for superior responsiveness.
-- **Resolution**: **1µs** (High precision).
-- **Smoothing**: **0.15** Exponential Moving Average. This filters out electrical noise from 8-bit potentiometers while letting the smooth Python trajectory pass through.
+### Utilities
 
----
+| Script | Description |
+|--------|-------------|
+| `quintic_trajectory.py` | Smooth trajectory generator |
+| `live_plotter.py` | Real-time motion visualization |
 
-## How to Run
+## Usage
 
-### 1. Flash the Firmware
-
-Connect your ESP32 and flash the optimized code:
+### Start the Controller
 
 ```bash
-idf.py -p /dev/ttyUSB0 flash monitor
+# Terminal 1: IK Controller
+python3 delta_3dof_controller.py
+
+# Terminal 2: Serial Bridge
+python3 robot_control.py
 ```
 
-### 2. Start the Control Loop
-
-Launch the ROS 2 nodes:
+### Run G-Code
 
 ```bash
-# Terminal 1: The Controller
-python3 src/velocity_pub/scripts/delta_3dof_controller.py
-
-# Terminal 2: The Bridge (sends data to ESP32)
-python3 src/velocity_pub/scripts/robot_control.py
+python3 delta_gcode_interpreter.py square_test.gcode
 ```
 
-### 3. Send Commands
-
-You can control the robot via G-code or ROS topics.
-
-**Option A: G-Code Script (Recommended)**
+### GUI Control
 
 ```bash
-# Run a square test pattern
-python3 src/velocity_pub/scripts/delta_gcode_interpreter.py src/velocity_pub/scripts/square_test.gcode
+python3 gui_controller.py
 ```
 
-*Note: Use `F1`-`F5` for testing. `F15` is extremely fast (0.25m/s).*
+## G-Code Format
 
-**Option B: Direct Target**
-
-```bash
-ros2 topic pub --once /delta/target_pose geometry_msgs/msg/Pose "{position: {x: 0.05, y: 0.05, z: -0.25}}"
+```gcode
+G21          ; Units: mm
+G90          ; Absolute positioning
+F200         ; Speed: 200 mm/s
+G1 X50 Y50 Z-220
+G1 X-50 Y50 Z-220
+G28          ; Home
 ```
 
----
+## Topics
 
-## Verification Tools
+| Topic | Type | Description |
+|-------|------|-------------|
+| `/delta/target_pose` | `Pose` | Direct position command |
+| `/delta/cartesian_trajectory` | `JointTrajectory` | Time-encoded path |
+| `/model/delta_robot/joint_trajectory` | `JointTrajectory` | Output to simulation/hardware |
 
-We have included tools to mathematically prove the system performance.
+## IK Module (delta_ik.py)
 
-### 1. Live Plotter
+Pure Python implementation matching `visual_kinematics` output.
 
-Visualizes the PWM signals and velocity in real-time.
+```python
+from delta_ik import DeltaIK
 
-```bash
-python3 src/velocity_pub/scripts/live_plotter.py
+ik = DeltaIK()
+t1, t2, t3 = ik.inverse(x, y, z)      # Returns radians
+t1, t2, t3 = ik.inverse_deg(x, y, z)  # Returns degrees
 ```
 
-- **Blue Line**: PWM Pulse Width (us).
-- **Red Line**: Velocity (deg/s). **Look for a smooth Bell Curve.**
-
-### 2. Motion Verifier
-
-Records a move and generates a statistical report proving zero-velocity start/stop.
-
-```bash
-python3 src/velocity_pub/scripts/verify_motion_profile.py
-```
-
-*Example Output:*
-
-```text
-✅ SUCCESS: Motion starts and ends at rest.
-Max Velocity: 0.1049 rad/s
-Max Accel:    1.1412 rad/s^2
-```
-
-## Physics & Dynamics
-
-The `delta_dynamics.py` module contains the full Inverse Dynamics equations (Lagrange Multipliers) for the robot. It is currently used for theoretical validation but can be enabled for torque-feedforward if you upgrade to torque-controlled motors in the future.
+**Accuracy**: Matches `visual_kinematics` to 15 decimal places (64-bit float precision).
