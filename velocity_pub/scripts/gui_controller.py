@@ -3,29 +3,48 @@ import sys
 import math
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import MultiThreadedExecutor
 from geometry_msgs.msg import Pose, Twist
 
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, 
                              QSlider, QLabel, QGroupBox, QPushButton, QCheckBox)
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal
+
+# --- WORKER THREAD FOR ROS 2 ---
+class RosThread(QThread):
+    def __init__(self, node):
+        super().__init__()
+        self.node = node
+
+    def run(self):
+        # This blocks until the node is destroyed, but since it's 
+        # in a separate thread, the GUI remains responsive.
+        rclpy.spin(self.node) 
+
+    def stop(self):
+        self.quit()
+        self.wait()
 
 class DeltaGUI(QWidget):
     def __init__(self):
         super().__init__()
 
         # --- ROS 2 Setup ---
-        rclpy.init(args=None)
+        # Initialize ROS if it hasn't been initialized yet
+        if not rclpy.ok():
+            rclpy.init(args=None)
+            
         self.node = rclpy.create_node('delta_gui_publisher')
         self.publisher = self.node.create_publisher(Pose, '/delta/target_pose', 10)
         self.speed_publisher = self.node.create_publisher(Twist, '/delta/speed_params', 10)
         
-        # Timer to handle ROS spinning (keep connection alive)
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.ros_spin)
-        self.timer.start(100)
+        # --- THREADING FIX ---
+        # Instead of a QTimer calling spin_once(), we run the spin loop
+        # in a dedicated separate thread.
+        self.ros_thread = RosThread(self.node)
+        self.ros_thread.start()
 
         # --- UI Constants ---
-        # Scaling factors to map integer sliders to float values
         self.POS_SCALE = 1000.0   # Slider 100 -> 0.1m
         self.ROT_SCALE = 100.0    # Slider 314 -> 3.14 rad
         self.SPEED_SCALE = 1000.0 # Slider 100 -> 0.1 m/s
@@ -33,7 +52,13 @@ class DeltaGUI(QWidget):
         
         # Keyboard control
         self.keyboard_enabled = False
-        self.KEYBOARD_STEP = 5  # mm per keypress (will be multiplied by POS_SCALE inverse)
+        self.KEYBOARD_STEP = 5 
+        self.keys_pressed = set()
+        
+        # Keyboard update timer (Keep this one! It handles UI logic, not ROS)
+        self.kb_timer = QTimer()
+        self.kb_timer.timeout.connect(self.keyboard_update)
+        self.kb_timer.start(50)  
         
         self.init_ui()
 
@@ -51,7 +76,7 @@ class DeltaGUI(QWidget):
         self.kb_checkbox.stateChanged.connect(self.toggle_keyboard_mode)
         kb_layout.addWidget(self.kb_checkbox)
         
-        kb_help = QLabel("W/S: Y axis | A/D: X axis | Space: Up | Shift: Down")
+        kb_help = QLabel("WASD: XY | Space/X: Up/Down | Q/E: Yaw | Z/C: Roll | H: Home")
         kb_help.setStyleSheet("color: gray; font-size: 10px;")
         kb_layout.addWidget(kb_help)
         
@@ -74,27 +99,20 @@ class DeltaGUI(QWidget):
         pos_group = QGroupBox("Position (Meters)")
         pos_layout = QVBoxLayout()
 
-        # X: -0.2 to 0.2
         self.sl_x, self.lbl_x = self.create_slider("X", -200, 200, 0, pos_layout)
-        # Y: -0.2 to 0.2
         self.sl_y, self.lbl_y = self.create_slider("Y", -200, 200, 0, pos_layout)
-        # Z: -0.40 to -0.15 (Standard delta workspace is negative Z)
         self.sl_z, self.lbl_z = self.create_slider("Z", -400, -150, -270, pos_layout)
 
         pos_group.setLayout(pos_layout)
         main_layout.addWidget(pos_group)
 
         # --- Orientation Group ---
-        rot_group = QGroupBox("Orientation (RPY Radians)")
+        rot_group = QGroupBox("End-Effector Orientation")
         rot_layout = QVBoxLayout()
 
-        # Roll (Tilt X): -pi/2 to pi/2
         self.sl_roll, self.lbl_roll = self.create_slider("Roll (Tilt)", -157, 157, 0, rot_layout)
-        # Pitch (Tilt Y): -pi/2 to pi/2 (Note: Your robot might not support Y-tilt physically)
-        self.sl_pitch, self.lbl_pitch = self.create_slider("Pitch (N/A)", -157, 157, 0, rot_layout)
-        # Yaw (Spin Z): -pi to pi
         self.sl_yaw, self.lbl_yaw = self.create_slider("Yaw (Spin)", -314, 314, 0, rot_layout)
-
+        
         rot_group.setLayout(rot_layout)
         main_layout.addWidget(rot_group)
 
@@ -102,25 +120,19 @@ class DeltaGUI(QWidget):
         speed_group = QGroupBox("Speed Settings")
         speed_layout = QVBoxLayout()
 
-        # Linear Speed: 0.01 to 0.2 m/s
         self.sl_lin_speed, self.lbl_lin_speed = self.create_slider("Linear Speed (m/s)", 10, 200, 50, speed_layout)
-        # Angular Speed: 0.1 to 5.0 rad/s
         self.sl_ang_speed, self.lbl_ang_speed = self.create_slider("Angular Speed (rad/s)", 1, 50, 10, speed_layout)
 
         speed_group.setLayout(speed_layout)
         main_layout.addWidget(speed_group)
 
         # --- Reset Button ---
-        self.btn_reset = QPushButton("Home Position")
+        self.btn_reset = QPushButton("Home Position (H)")
         self.btn_reset.clicked.connect(self.reset_sliders)
         main_layout.addWidget(self.btn_reset)
 
         self.setLayout(main_layout)
-        
-        # Enable keyboard focus
         self.setFocusPolicy(Qt.StrongFocus)
-
-        # Trigger initial publish
         self.update_command()
 
     def toggle_keyboard_mode(self, state):
@@ -136,107 +148,89 @@ class DeltaGUI(QWidget):
         self.lbl_step.setText(f"Step Size: {value} mm")
 
     def keyPressEvent(self, event):
-        """Handle keyboard input for WASD navigation."""
         if not self.keyboard_enabled:
             super().keyPressEvent(event)
             return
+        if event.isAutoRepeat():
+            return
+        self.keys_pressed.add(event.key())
+    
+    def keyReleaseEvent(self, event):
+        if event.isAutoRepeat():
+            return
+        self.keys_pressed.discard(event.key())
+    
+    def keyboard_update(self):
+        if not self.keyboard_enabled or not self.keys_pressed:
+            return
         
-        # Step in slider units (mm -> slider scale)
-        step = self.KEYBOARD_STEP  # Already in mm, slider is in mm scale (1 unit = 1mm)
+        step = self.KEYBOARD_STEP
+        rot_step = 5 
         
-        key = event.key()
+        # Position
+        if Qt.Key_W in self.keys_pressed: self.sl_y.setValue(min(self.sl_y.maximum(), self.sl_y.value() + step))
+        if Qt.Key_S in self.keys_pressed: self.sl_y.setValue(max(self.sl_y.minimum(), self.sl_y.value() - step))
+        if Qt.Key_A in self.keys_pressed: self.sl_x.setValue(max(self.sl_x.minimum(), self.sl_x.value() - step))
+        if Qt.Key_D in self.keys_pressed: self.sl_x.setValue(min(self.sl_x.maximum(), self.sl_x.value() + step))
+        if Qt.Key_Space in self.keys_pressed: self.sl_z.setValue(min(self.sl_z.maximum(), self.sl_z.value() + step))
+        if Qt.Key_X in self.keys_pressed: self.sl_z.setValue(max(self.sl_z.minimum(), self.sl_z.value() - step))
         
-        if key == Qt.Key_W:
-            # Forward (+Y)
-            new_val = min(self.sl_y.maximum(), self.sl_y.value() + step)
-            self.sl_y.setValue(new_val)
-        elif key == Qt.Key_S:
-            # Backward (-Y)
-            new_val = max(self.sl_y.minimum(), self.sl_y.value() - step)
-            self.sl_y.setValue(new_val)
-        elif key == Qt.Key_A:
-            # Left (-X)
-            new_val = max(self.sl_x.minimum(), self.sl_x.value() - step)
-            self.sl_x.setValue(new_val)
-        elif key == Qt.Key_D:
-            # Right (+X)
-            new_val = min(self.sl_x.maximum(), self.sl_x.value() + step)
-            self.sl_x.setValue(new_val)
-        elif key == Qt.Key_Space:
-            # Up (+Z, but Z is negative so we go towards less negative)
-            new_val = min(self.sl_z.maximum(), self.sl_z.value() + step)
-            self.sl_z.setValue(new_val)
-        elif key == Qt.Key_Shift:
-            # Down (-Z, more negative)
-            new_val = max(self.sl_z.minimum(), self.sl_z.value() - step)
-            self.sl_z.setValue(new_val)
-        else:
-            super().keyPressEvent(event)
+        # Orientation
+        if Qt.Key_Q in self.keys_pressed: self.sl_yaw.setValue(max(self.sl_yaw.minimum(), self.sl_yaw.value() - rot_step))
+        if Qt.Key_E in self.keys_pressed: self.sl_yaw.setValue(min(self.sl_yaw.maximum(), self.sl_yaw.value() + rot_step))
+        if Qt.Key_Z in self.keys_pressed: self.sl_roll.setValue(max(self.sl_roll.minimum(), self.sl_roll.value() - rot_step))
+        if Qt.Key_C in self.keys_pressed: self.sl_roll.setValue(min(self.sl_roll.maximum(), self.sl_roll.value() + rot_step))
+        
+        if Qt.Key_H in self.keys_pressed:
+            self.reset_sliders()
+            self.keys_pressed.discard(Qt.Key_H)
 
-    def create_slider(self, label_text, min_val, max_val, default_val, parent_layout):
-        """Helper to create a standardized slider block"""
+    def create_slider(self, label_text, min_val, max_val, default_val, parent_layout, scale=None):
         container = QHBoxLayout()
+        if scale is None: scale = self.POS_SCALE
         
-        label = QLabel(f"{label_text}: {default_val/self.POS_SCALE:.3f}")
-        label.setMinimumWidth(100)
+        label = QLabel(f"{label_text}: {default_val/scale:.3f}")
+        label.setMinimumWidth(120)
         
         slider = QSlider(Qt.Horizontal)
         slider.setMinimum(min_val)
         slider.setMaximum(max_val)
         slider.setValue(default_val)
+        slider.setProperty("scale", scale)
         slider.valueChanged.connect(lambda: self.update_label(slider, label, label_text))
         slider.valueChanged.connect(self.update_command)
         
         container.addWidget(label)
         container.addWidget(slider)
         parent_layout.addLayout(container)
-        
         return slider, label
 
     def update_label(self, slider, label, text):
         val = slider.value()
-        # Determine scale based on text context (simple heuristic)
-        if "Linear Speed" in text:
-            scale = self.SPEED_SCALE
-        elif "Angular Speed" in text:
-            scale = self.ANG_SPEED_SCALE
-        elif "Roll" in text or "Pitch" in text or "Yaw" in text:
-            scale = self.ROT_SCALE
-        else:
-            scale = self.POS_SCALE
+        scale = slider.property("scale")
+        if scale is None: scale = self.POS_SCALE
         label.setText(f"{text}: {val/scale:.3f}")
 
     def reset_sliders(self):
-        # Block signals to prevent stuttering updates during reset
         self.blockSignals(True)
         self.sl_x.setValue(0)
         self.sl_y.setValue(0)
-        self.sl_z.setValue(-270) # Nominal height
+        self.sl_z.setValue(-270)
         self.sl_roll.setValue(0)
-        self.sl_pitch.setValue(0)
         self.sl_yaw.setValue(0)
         self.sl_lin_speed.setValue(50)
         self.sl_ang_speed.setValue(10)
         self.blockSignals(False)
-        
-        # Manually trigger update once
         self.update_label(self.sl_x, self.lbl_x, "X")
         self.update_label(self.sl_y, self.lbl_y, "Y")
         self.update_label(self.sl_z, self.lbl_z, "Z")
         self.update_label(self.sl_roll, self.lbl_roll, "Roll (Tilt)")
-        self.update_label(self.sl_pitch, self.lbl_pitch, "Pitch (N/A)")
         self.update_label(self.sl_yaw, self.lbl_yaw, "Yaw (Spin)")
         self.update_label(self.sl_lin_speed, self.lbl_lin_speed, "Linear Speed (m/s)")
         self.update_label(self.sl_ang_speed, self.lbl_ang_speed, "Angular Speed (rad/s)")
-        
         self.update_command()
 
     def get_quaternion_from_euler(self, roll, pitch, yaw):
-        """
-        Convert an Euler angle to a quaternion.
-        Input: radians
-        Output: qx, qy, qz, qw
-        """
         qx = math.sin(roll/2) * math.cos(pitch/2) * math.cos(yaw/2) - math.cos(roll/2) * math.sin(pitch/2) * math.sin(yaw/2)
         qy = math.cos(roll/2) * math.sin(pitch/2) * math.cos(yaw/2) + math.sin(roll/2) * math.cos(pitch/2) * math.sin(yaw/2)
         qz = math.cos(roll/2) * math.cos(pitch/2) * math.sin(yaw/2) - math.sin(roll/2) * math.sin(pitch/2) * math.cos(yaw/2)
@@ -244,19 +238,17 @@ class DeltaGUI(QWidget):
         return [qx, qy, qz, qw]
 
     def update_command(self):
-        # 1. Get Values
+        # Publishing from the GUI thread is safe in rclpy for simple publishers
         x = self.sl_x.value() / self.POS_SCALE
         y = self.sl_y.value() / self.POS_SCALE
         z = self.sl_z.value() / self.POS_SCALE
         
         r = self.sl_roll.value() / self.ROT_SCALE
-        p = self.sl_pitch.value() / self.ROT_SCALE
+        p = 0.0
         y_rot = self.sl_yaw.value() / self.ROT_SCALE
 
-        # 2. Convert RPY to Quaternion
         q = self.get_quaternion_from_euler(r, p, y_rot)
 
-        # 3. Create Message
         msg = Pose()
         msg.position.x = x
         msg.position.y = y
@@ -266,25 +258,35 @@ class DeltaGUI(QWidget):
         msg.orientation.z = q[2]
         msg.orientation.w = q[3]
 
-        # 4. Publish
         self.publisher.publish(msg)
 
-        # 5. Publish Speed
         speed_msg = Twist()
         speed_msg.linear.x = self.sl_lin_speed.value() / self.SPEED_SCALE
         speed_msg.angular.z = self.sl_ang_speed.value() / self.ANG_SPEED_SCALE
         self.speed_publisher.publish(speed_msg)
 
-    def ros_spin(self):
-        # Non-blocking spin to keep ROS 2 callbacks active (if any)
-        rclpy.spin_once(self.node, timeout_sec=0)
-
     def closeEvent(self, event):
-        self.node.destroy_node()
-        rclpy.shutdown()
+        # Clean shutdown of thread and node
+        self.kb_timer.stop()
+        
+        if hasattr(self, 'ros_thread'):
+            # Stop the ROS thread
+            if self.ros_thread.isRunning():
+                # We can't easily stop rclpy.spin() from outside, 
+                # but destroying the node usually triggers it to return
+                self.node.destroy_node()
+                self.ros_thread.quit()
+                self.ros_thread.wait()
+        
+        if rclpy.ok():
+            rclpy.shutdown()
         event.accept()
 
 def main():
+    # Helper to prevent shared library issues on some Linux distros
+    import os
+    os.environ["QT_QPA_PLATFORM"] = "xcb" 
+    
     app = QApplication(sys.argv)
     gui = DeltaGUI()
     gui.show()

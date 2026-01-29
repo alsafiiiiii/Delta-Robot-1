@@ -101,6 +101,70 @@ class DeltaIK:
         """Same as inverse() but returns angles in DEGREES."""
         rads = self.inverse(x, y, z)
         return (math.degrees(rads[0]), math.degrees(rads[1]), math.degrees(rads[2]))
+    
+    def check_position(self, x: float, y: float, z: float) -> dict:
+        """
+        Check if position is valid and how close to workspace limits.
+        
+        Returns:
+            dict with keys:
+                'valid': bool - True if position is reachable
+                'warning': str or None - Warning message if close to limits
+                'margin': float - Smallest discriminant margin (lower = closer to limit)
+        """
+        min_disc = float('inf')
+        
+        for i in range(3):
+            # Calculate discriminant (same as in inverse())
+            oa_x = x - self.ap_x[i]
+            oa_y = y - self.ap_y[i]
+            oa_z = z
+            
+            norm_oa_sq = oa_x**2 + oa_y**2 + oa_z**2
+            
+            a = 2.0 * self.l1 * z
+            cp = self.cos_phi[i]
+            sp = self.sin_phi[i]
+            
+            term1 = (self.r1 * cp) - oa_x
+            term2 = (self.r1 * sp) - oa_y
+            b = 2.0 * self.l1 * (cp * term1 + sp * term2)
+            
+            c = (self.l2**2 - self.l1**2 - norm_oa_sq - self.r1**2 + 
+                 2.0 * self.r1 * (cp * oa_x + sp * oa_y))
+            
+            disc = a*a + b*b - c*c
+            min_disc = min(min_disc, disc)
+        
+        # Determine status
+        if min_disc < 0:
+            return {
+                'valid': False,
+                'warning': f'Position ({x:.3f}, {y:.3f}, {z:.3f}) is OUTSIDE workspace',
+                'margin': min_disc
+            }
+        elif min_disc < 0.001:  # Very close to limit
+            return {
+                'valid': True,
+                'warning': f'WARNING: Position near workspace boundary (margin={min_disc:.4f})',
+                'margin': min_disc
+            }
+        elif min_disc < 0.01:  # Somewhat close
+            return {
+                'valid': True,
+                'warning': f'Caution: Approaching workspace limit (margin={min_disc:.4f})',
+                'margin': min_disc
+            }
+        else:
+            return {
+                'valid': True,
+                'warning': None,
+                'margin': min_disc
+            }
+    
+    def is_reachable(self, x: float, y: float, z: float) -> bool:
+        """Quick check if position is reachable."""
+        return self.check_position(x, y, z)['valid']
 
 
 # Convenience function for drop-in replacement

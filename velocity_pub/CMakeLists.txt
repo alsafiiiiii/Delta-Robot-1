@@ -41,14 +41,17 @@ install(
 install(
     PROGRAMS
     scripts/robot_control.py
-    scripts/delta_5dof_controller.py # NEW
+    scripts/delta_5dof_controller.py
     scripts/delta_gcode_interpreter.py
     scripts/gui_controller.py
     scripts/joystick_controller.py
     scripts/camera_pnp.py
     scripts/delta_3dof_controller.py
     scripts/live_plotter.py
-    launch/four_ws_control.launch.py
+    scripts/sim_control.py
+    scripts/conveyor_manager.py
+    scripts/task_sequencer.py
+    launch/sim_5dof.launch.py
     DESTINATION lib/${PROJECT_NAME}
   )
 

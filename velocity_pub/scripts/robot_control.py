@@ -33,7 +33,7 @@ class EspSerialBridge(Node):
 
         self.sub = self.create_subscription(
             JointTrajectory, 
-            '/model/delta_robot/joint_trajectory', 
+            '/delta/joint_commands', 
             self.traj_callback, 
             10)
 

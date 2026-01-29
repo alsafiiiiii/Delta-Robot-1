@@ -32,7 +32,8 @@ G-Code / GUI / Joystick
 |--------|-------------|
 | `delta_3dof_controller.py` | Main controller node - handles IK and trajectory |
 | `delta_ik.py` | Pure Python inverse kinematics (no external deps) |
-| `robot_control.py` | Serial bridge to ESP32 |
+| `robot_control.py` | Serial bridge to ESP32 (real hardware) |
+| `sim_control.py` | Gazebo bridge with ESP32-like interpolation |
 
 ### Input Sources
 

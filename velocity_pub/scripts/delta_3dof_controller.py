@@ -32,7 +32,7 @@ class SmoothDeltaController(Node):
         self.DIRECT_DURATION_MS = 20  # 20ms for immediate response
         
         # Publishers / Subscribers
-        self.joint_pub = self.create_publisher(JointTrajectory, '/model/delta_robot/joint_trajectory', 10)
+        self.joint_pub = self.create_publisher(JointTrajectory, '/delta/joint_commands', 10)
         
         # Time-encoded trajectory (for G-code)
         self.cart_sub = self.create_subscription(
