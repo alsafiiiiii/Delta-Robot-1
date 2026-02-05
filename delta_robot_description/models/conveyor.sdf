@@ -46,46 +46,6 @@
         </surface>
       </collision>
 
-      <!-- End Roller 1 -->
-      <collision name="roller1_collision">
-        <pose>0.75 0 0 0 1.5708 0</pose>
-        <geometry>
-          <cylinder>
-            <length>0.3</length>
-            <radius>0.025</radius>
-          </cylinder>
-        </geometry>
-        <surface>
-          <friction>
-            <ode>
-              <mu>0.7</mu>
-              <mu2>150</mu2>
-              <fdir1>1 0 0</fdir1>
-            </ode>
-          </friction>
-        </surface>
-      </collision>
-
-      <!-- End Roller 2 -->
-      <collision name="roller2_collision">
-        <pose>-0.75 0 0 0 1.5708 0</pose>
-        <geometry>
-          <cylinder>
-            <length>0.3</length>
-            <radius>0.025</radius>
-          </cylinder>
-        </geometry>
-        <surface>
-          <friction>
-            <ode>
-              <mu>0.7</mu>
-              <mu2>150</mu2>
-              <fdir1>1 0 0</fdir1>
-            </ode>
-          </friction>
-        </surface>
-      </collision>
-
       <!-- Visual: Belt Surface -->
       <visual name="belt_visual">
         <pose>0 0 0 0 0 0</pose>
@@ -98,86 +58,6 @@
           <ambient>0.1 0.1 0.1 1</ambient>
           <diffuse>0.15 0.15 0.15 1</diffuse>
           <specular>0.3 0.3 0.3 1</specular>
-        </material>
-      </visual>
-
-      <!-- Visual: Roller 1 -->
-      <visual name="roller1_visual">
-        <pose>0.75 0 0 1.5708 0 0</pose>
-        <geometry>
-          <cylinder>
-            <length>0.3</length>
-            <radius>0.025</radius>
-          </cylinder>
-        </geometry>
-        <material>
-          <ambient>0.3 0.3 0.3 1</ambient>
-          <diffuse>0.4 0.4 0.4 1</diffuse>
-        </material>
-      </visual>
-
-      <!-- Visual: Roller 2 -->
-      <visual name="roller2_visual">
-        <pose>-0.75 0 0 1.5708 0 0</pose>
-        <geometry>
-          <cylinder>
-            <length>0.3</length>
-            <radius>0.025</radius>
-          </cylinder>
-        </geometry>
-        <material>
-          <ambient>0.3 0.3 0.3 1</ambient>
-          <diffuse>0.4 0.4 0.4 1</diffuse>
-        </material>
-      </visual>
-
-      <!-- Visual: Legs -->
-      <visual name="leg1">
-        <pose>0.6 0.12 -0.35 0 0 0</pose>
-        <geometry>
-          <cylinder>
-            <radius>0.015</radius>
-            <length>0.7</length>
-          </cylinder>
-        </geometry>
-        <material>
-          <ambient>0.2 0.2 0.2 1</ambient>
-        </material>
-      </visual>
-      <visual name="leg2">
-        <pose>0.6 -0.12 -0.35 0 0 0</pose>
-        <geometry>
-          <cylinder>
-            <radius>0.015</radius>
-            <length>0.7</length>
-          </cylinder>
-        </geometry>
-        <material>
-          <ambient>0.2 0.2 0.2 1</ambient>
-        </material>
-      </visual>
-      <visual name="leg3">
-        <pose>-0.6 0.12 -0.35 0 0 0</pose>
-        <geometry>
-          <cylinder>
-            <radius>0.015</radius>
-            <length>0.7</length>
-          </cylinder>
-        </geometry>
-        <material>
-          <ambient>0.2 0.2 0.2 1</ambient>
-        </material>
-      </visual>
-      <visual name="leg4">
-        <pose>-0.6 -0.12 -0.35 0 0 0</pose>
-        <geometry>
-          <cylinder>
-            <radius>0.015</radius>
-            <length>0.7</length>
-          </cylinder>
-        </geometry>
-        <material>
-          <ambient>0.2 0.2 0.2 1</ambient>
         </material>
       </visual>
     </link>

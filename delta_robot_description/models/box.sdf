@@ -14,10 +14,24 @@
                     <izz>1e-6</izz>
                 </inertia>
             </inertial>
-            <visual name="box_visual">
+
+            <visual name="box_body_visual">
                 <geometry>
                     <box>
                         <size>0.05 0.05 0.05</size>
+                    </box>
+                </geometry>
+                <material>
+                    <ambient>0.8 0 0.8 1</ambient>
+                    <diffuse>0.8 0 0.8 1</diffuse>
+                </material>
+            </visual>
+
+            <visual name="top_surface_visual">
+                <pose>0 0 0.02501 0 0 0</pose>
+                <geometry>
+                    <box>
+                        <size>0.05 0.05 0.001</size>
                     </box>
                 </geometry>
                 <material>
@@ -25,6 +39,7 @@
                     <diffuse>1 0 0 1</diffuse>
                 </material>
             </visual>
+
             <collision name="box_collision">
                 <geometry>
                     <box>

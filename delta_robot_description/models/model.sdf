@@ -508,7 +508,7 @@
             <sensor name="camera1" type="camera">
                 <pose>0 0 0 0 0 0</pose>
                 <topic>camera/image_raw</topic>
-                <update_rate>30.0</update_rate>
+                <update_rate>60.0</update_rate>
                 <camera name="head">
                     <horizontal_fov>1.3962634</horizontal_fov>
                     <image>
@@ -1079,8 +1079,8 @@
             <suction_topic>/suction/enable</suction_topic>
             <link_name>vacuum_gripper</link_name>
             <use_suction_radius>true</use_suction_radius>
-            <suction_radius>0.0615</suction_radius>
-            <suction_force>5.0</suction_force>
+            <suction_radius>0.062</suction_radius>
+            <suction_force>10.0</suction_force>
         </plugin>
     </model>
 </sdf>

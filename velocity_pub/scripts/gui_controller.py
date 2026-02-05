@@ -123,7 +123,7 @@ class DeltaGUI(QWidget):
         speed_group = QGroupBox("Speed Settings")
         speed_layout = QVBoxLayout()
 
-        self.sl_lin_speed, self.lbl_lin_speed = self.create_slider("Linear Speed (m/s)", 500, 1000, 300, speed_layout)
+        self.sl_lin_speed, self.lbl_lin_speed = self.create_slider("Linear Speed (m/s)", 500, 2000, 300, speed_layout)
         self.sl_ang_speed, self.lbl_ang_speed = self.create_slider("Angular Speed (rad/s)", 1, 50, 10, speed_layout)
 
         speed_group.setLayout(speed_layout)

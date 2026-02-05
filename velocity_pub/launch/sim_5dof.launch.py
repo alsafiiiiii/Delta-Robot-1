@@ -60,8 +60,8 @@ def generate_launch_description():
             '-file', os.path.join(delta_robot_desc, 'models', 'conveyor.sdf'),
             '-name', 'conveyor_belt',
             '-x', '0.0',
-            '-y', '-0.0170',
-            '-z', '-0.0186'
+            '-y', '-0.0172',
+            '-z', '-0.015'
         ],
         output='screen',
         condition=IfCondition(LaunchConfiguration('conveyor'))
@@ -124,7 +124,7 @@ def generate_launch_description():
     delayed_conveyor_manager = TimerAction(
         period=3.0,
         actions=[conveyor_manager]
-    )
+    )   
     
     return LaunchDescription([
         gui_arg,
@@ -133,7 +133,7 @@ def generate_launch_description():
         spawn_conveyor,
         spawn_landing_pad,
         controller_5dof,
-        sim_control,
         gui_controller,
+        sim_control,
         delayed_conveyor_manager,
     ])

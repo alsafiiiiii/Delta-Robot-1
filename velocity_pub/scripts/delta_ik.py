@@ -12,6 +12,7 @@ Usage:
 """
 import math
 from typing import Tuple, Optional
+import numpy as np
 
 class DeltaIK:
     """

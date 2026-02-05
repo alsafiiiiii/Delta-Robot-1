@@ -47,7 +47,8 @@ install(
     scripts/joystick_controller.py
     scripts/camera_pnp.py
     scripts/delta_3dof_controller.py
-    scripts/live_plotter.py
+    scripts/delta_explain.py
+    scripts/pid_tuner.py
     scripts/sim_control.py
     scripts/conveyor_manager.py
     scripts/task_sequencer.py
