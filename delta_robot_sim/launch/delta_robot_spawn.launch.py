@@ -1,4 +1,5 @@
 import os
+import math
 from pathlib import Path
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
@@ -35,6 +36,10 @@ def generate_launch_description():
     with open(box_sdf_file, 'r') as infp:
         box_desc = infp.read()
 
+    # Pre-process SDF to replace $(find delta_robot_sim) with actual path
+    # because standard SDF parser doesn't resolve $(find ...)
+    robot_desc = robot_desc.replace('$(find delta_robot_sim)', delta_robot_sim_path)
+
     # Setup World
     world_file = os.path.join(delta_robot_sim_path, 'worlds', 'empty.sdf')
     
@@ -58,6 +63,10 @@ def generate_launch_description():
         parameters=[
             {'use_sim_time': True},
             {'robot_description': robot_desc},
+        ],
+        remappings=[
+            ('/tf', '/tf_ignore'),
+            ('/tf_static', '/tf_static_ignore'),
         ]
     )
 
@@ -71,7 +80,7 @@ def generate_launch_description():
             '-name', 'delta_robot',
             '-allow_renaming', 'false',
             '-x', '0.0', '-y', '0.0', '-z', '0.50',
-            '-R', '0.0', '-P', '0.0', '-Y', '0.0',
+            '-R', '0.0', '-P', '0.0', '-Y', str(math.pi),
         ],
     )
 
@@ -96,11 +105,29 @@ def generate_launch_description():
         parameters=[{'use_sim_time': True}] # Important for syncing with Gazebo
     )
 
+    # --- 7. ROS2 Control Spawners ---
+    load_joint_state_broadcaster = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=['joint_state_broadcaster'],
+        output='screen',
+    )
+
+    load_joint_trajectory_controller = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=['joint_trajectory_controller'],
+        output='screen',
+    )
+    
     return LaunchDescription([
         gazebo_resource_path,
         gazebo_plugin_path,
         gz_sim,
         gz_spawn_entity,
         bridge,
-        rviz2, 
+        robot_state_publisher,
+        rviz2,
+        load_joint_state_broadcaster,
+        load_joint_trajectory_controller,
     ])

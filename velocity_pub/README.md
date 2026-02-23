@@ -30,10 +30,9 @@ G-Code / GUI / Joystick
 
 | Script | Description |
 |--------|-------------|
-| `delta_3dof_controller.py` | Main controller node - handles IK and trajectory |
+| `delta_3dof_controller.py` | Main controller node - handles IK and trajectory (Sim & Real) |
 | `delta_ik.py` | Pure Python inverse kinematics (no external deps) |
 | `robot_control.py` | Serial bridge to ESP32 (real hardware) |
-| `sim_control.py` | Gazebo bridge with ESP32-like interpolation |
 
 ### Input Sources
 
@@ -59,14 +58,16 @@ G-Code / GUI / Joystick
 # Terminal 1: IK Controller
 python3 delta_3dof_controller.py
 
-# Terminal 2: Serial Bridge
+# Terminal 2: Serial Bridge (Real Robot)
 python3 robot_control.py
 ```
 
 ### Run G-Code
 
+G-code files are located in the `../gcode/` subdirectory (relative to scripts).
+
 ```bash
-python3 delta_gcode_interpreter.py square_test.gcode
+python3 delta_gcode_interpreter.py ../gcode/square_test.gcode
 ```
 
 ### GUI Control

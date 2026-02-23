@@ -31,8 +31,22 @@ class SmoothDeltaController(Node):
         # Direct mode response time (instant)
         self.DIRECT_DURATION_MS = 20  # 20ms for immediate response
         
+        # --- CONFIGURATION ---
+        self.declare_parameter('use_sim', False)
+        self.use_sim = self.get_parameter('use_sim').get_parameter_value().bool_value
+        
+        # Topic selection based on mode
+        if self.use_sim:
+            # ROS 2 Control (Simulation)
+            topic = '/joint_trajectory_controller/joint_trajectory'
+            self.get_logger().info(f"Mode: SIMULATION. Publishing to {topic}")
+        else:
+            # Custom Serial Bridge (Real Robot)
+            topic = '/delta/joint_commands'
+            self.get_logger().info(f"Mode: REAL ROBOT. Publishing to {topic}")
+
         # Publishers / Subscribers
-        self.joint_pub = self.create_publisher(JointTrajectory, '/delta/joint_commands', 10)
+        self.joint_pub = self.create_publisher(JointTrajectory, topic, 10)
         
         # Time-encoded trajectory (for G-code)
         self.cart_sub = self.create_subscription(

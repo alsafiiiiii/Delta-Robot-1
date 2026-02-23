@@ -1,0 +1,21 @@
+material ArucoMarker
+{
+  technique
+  {
+    pass
+    {
+      lighting off
+      scene_blend no_blend
+      depth_check on
+      depth_write on
+
+      texture_unit
+      {
+        texture aruco_marker.png
+        // This ensures the texture doesn't get dark at angles
+        tex_address_mode clamp
+        filtering trilinear
+      }
+    }
+  }
+}

@@ -1,0 +1,35 @@
+digraph G {
+"delta_robot" -> "camera_bar"[label=" Broadcaster: default_authority\nAverage rate: 941.929\nBuffer length: 3.048\nMost recent transform: 70.037\nOldest transform: 66.989\n"];
+"delta_robot" -> "camera_holder"[label=" Broadcaster: default_authority\nAverage rate: 941.929\nBuffer length: 3.048\nMost recent transform: 70.037\nOldest transform: 66.989\n"];
+"delta_robot" -> "EEBase"[label=" Broadcaster: default_authority\nAverage rate: 941.929\nBuffer length: 3.048\nMost recent transform: 70.037\nOldest transform: 66.989\n"];
+"delta_robot" -> "dummy_arm5"[label=" Broadcaster: default_authority\nAverage rate: 941.929\nBuffer length: 3.048\nMost recent transform: 70.037\nOldest transform: 66.989\n"];
+"delta_robot" -> "dummy_arm4"[label=" Broadcaster: default_authority\nAverage rate: 941.929\nBuffer length: 3.048\nMost recent transform: 70.037\nOldest transform: 66.989\n"];
+"delta_robot" -> "vacuum_gripper"[label=" Broadcaster: default_authority\nAverage rate: 941.929\nBuffer length: 3.048\nMost recent transform: 70.037\nOldest transform: 66.989\n"];
+"delta_robot" -> "dummy_arm1"[label=" Broadcaster: default_authority\nAverage rate: 941.929\nBuffer length: 3.048\nMost recent transform: 70.037\nOldest transform: 66.989\n"];
+"delta_robot" -> "dummy_arm2"[label=" Broadcaster: default_authority\nAverage rate: 941.929\nBuffer length: 3.048\nMost recent transform: 70.037\nOldest transform: 66.989\n"];
+"delta_robot" -> "world_link"[label=" Broadcaster: default_authority\nAverage rate: 941.929\nBuffer length: 3.048\nMost recent transform: 70.037\nOldest transform: 66.989\n"];
+"delta_robot" -> "EE"[label=" Broadcaster: default_authority\nAverage rate: 941.929\nBuffer length: 3.048\nMost recent transform: 70.037\nOldest transform: 66.989\n"];
+"delta_robot" -> "arm6"[label=" Broadcaster: default_authority\nAverage rate: 941.929\nBuffer length: 3.048\nMost recent transform: 70.037\nOldest transform: 66.989\n"];
+"delta_robot" -> "dummy_arm3"[label=" Broadcaster: default_authority\nAverage rate: 941.929\nBuffer length: 3.048\nMost recent transform: 70.037\nOldest transform: 66.989\n"];
+"delta_robot" -> "base_link"[label=" Broadcaster: default_authority\nAverage rate: 941.929\nBuffer length: 3.048\nMost recent transform: 70.037\nOldest transform: 66.989\n"];
+"delta_robot" -> "forearm3"[label=" Broadcaster: default_authority\nAverage rate: 941.929\nBuffer length: 3.048\nMost recent transform: 70.037\nOldest transform: 66.989\n"];
+"delta_robot" -> "dummy_arm6"[label=" Broadcaster: default_authority\nAverage rate: 941.929\nBuffer length: 3.048\nMost recent transform: 70.037\nOldest transform: 66.989\n"];
+"delta_robot" -> "base_hex"[label=" Broadcaster: default_authority\nAverage rate: 941.929\nBuffer length: 3.048\nMost recent transform: 70.037\nOldest transform: 66.989\n"];
+"delta_robot" -> "eye_to_hand_cam"[label=" Broadcaster: default_authority\nAverage rate: 941.929\nBuffer length: 3.048\nMost recent transform: 70.037\nOldest transform: 66.989\n"];
+"delta_robot" -> "camera_stick"[label=" Broadcaster: default_authority\nAverage rate: 941.929\nBuffer length: 3.048\nMost recent transform: 70.037\nOldest transform: 66.989\n"];
+"delta_robot" -> "forearm1"[label=" Broadcaster: default_authority\nAverage rate: 941.929\nBuffer length: 3.048\nMost recent transform: 70.037\nOldest transform: 66.989\n"];
+"delta_robot" -> "forearm2"[label=" Broadcaster: default_authority\nAverage rate: 941.929\nBuffer length: 3.048\nMost recent transform: 70.037\nOldest transform: 66.989\n"];
+"delta_robot" -> "camera"[label=" Broadcaster: default_authority\nAverage rate: 941.929\nBuffer length: 3.048\nMost recent transform: 70.037\nOldest transform: 66.989\n"];
+"delta_robot" -> "arm1"[label=" Broadcaster: default_authority\nAverage rate: 941.929\nBuffer length: 3.048\nMost recent transform: 70.037\nOldest transform: 66.989\n"];
+"delta_robot" -> "arm2"[label=" Broadcaster: default_authority\nAverage rate: 941.929\nBuffer length: 3.048\nMost recent transform: 70.037\nOldest transform: 66.989\n"];
+"delta_robot" -> "Bevel1"[label=" Broadcaster: default_authority\nAverage rate: 941.929\nBuffer length: 3.048\nMost recent transform: 70.037\nOldest transform: 66.989\n"];
+"delta_robot" -> "arm3"[label=" Broadcaster: default_authority\nAverage rate: 941.929\nBuffer length: 3.048\nMost recent transform: 70.037\nOldest transform: 66.989\n"];
+"delta_robot" -> "Bevel2"[label=" Broadcaster: default_authority\nAverage rate: 941.929\nBuffer length: 3.048\nMost recent transform: 70.037\nOldest transform: 66.989\n"];
+"delta_robot" -> "arm4"[label=" Broadcaster: default_authority\nAverage rate: 941.929\nBuffer length: 3.048\nMost recent transform: 70.037\nOldest transform: 66.989\n"];
+"delta_robot" -> "T"[label=" Broadcaster: default_authority\nAverage rate: 941.929\nBuffer length: 3.048\nMost recent transform: 70.037\nOldest transform: 66.989\n"];
+"delta_robot" -> "arm5"[label=" Broadcaster: default_authority\nAverage rate: 941.929\nBuffer length: 3.048\nMost recent transform: 70.037\nOldest transform: 66.989\n"];
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 1771191453.586021"[ shape=plaintext ] ;
+}->"delta_robot";
+}

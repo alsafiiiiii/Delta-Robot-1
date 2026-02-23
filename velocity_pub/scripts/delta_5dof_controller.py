@@ -46,7 +46,7 @@ class SmoothDeltaController5DOF(Node):
         # IK solver with SIMULATION geometry
         # Sim: r_base=0.0758, r_ee=0.035, l1=0.075, l2=0.2639
         # Real: 0.104, 0.040, 0.105, 0.205 (default in delta_ik.py)
-        self.ik = DeltaIK(r_base=0.0758, r_ee=0.035, l_upper=0.075, l_lower=0.2639)
+        self.ik = DeltaIK()
         
         # --- STATE ---
         self.current_pos = [0.0, 0.0, -0.25]
@@ -107,6 +107,9 @@ class SmoothDeltaController5DOF(Node):
         )
         self.target_tilt = roll  # Tilt around X axis
         self.target_spin = yaw   # Spin around Z axis
+        # self.get_logger().info(f"Target Pose: {self.target_pos}, Tilt: {self.target_tilt:.3f}, Spin: {self.target_spin:.3f}")
+        if abs(yaw) > 0.1: # Only log if there is significant yaw
+             self.get_logger().info(f"Received Yaw: {yaw:.3f}")
         self.is_moving = True
 
     def trajectory_callback(self, msg):

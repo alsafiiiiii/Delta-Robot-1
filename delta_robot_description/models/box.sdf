@@ -4,7 +4,7 @@
         <link name="box">
             <pose>0 0 0.025 0 0 0</pose>
             <inertial>
-                <mass>0.005</mass>
+                <mass>0.001</mass>
                 <inertia>
                     <ixx>1e-6</ixx>
                     <ixy>0</ixy>
@@ -28,15 +28,26 @@
             </visual>
 
             <visual name="top_surface_visual">
-                <pose>0 0 0.02501 0 0 0</pose>
+                <pose>0 0 0.0255 0 0 0</pose>
                 <geometry>
-                    <box>
-                        <size>0.05 0.05 0.001</size>
-                    </box>
+                    <plane>
+                        <normal>0 0 1</normal>
+                        <size>0.05 0.05</size>
+                    </plane>
                 </geometry>
                 <material>
-                    <ambient>1 0 0 1</ambient>
-                    <diffuse>1 0 0 1</diffuse>
+                    <ambient>1 1 1 1</ambient>
+                    <diffuse>1 1 1 1</diffuse>
+                    <specular>0 0 0 1</specular>
+
+                    <pbr>
+                        <metal>
+                            <albedo_map>
+                                /home/rikisu/major_project_ws/src/delta_robot_description/materials/textures/aruco_marker.png</albedo_map>
+                            <roughness>1.0</roughness>
+                            <metalness>0.0</metalness>
+                        </metal>
+                    </pbr>
                 </material>
             </visual>
 

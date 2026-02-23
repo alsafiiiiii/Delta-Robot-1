@@ -1,0 +1,27 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 100  # Hz
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    joint_trajectory_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+joint_trajectory_controller:
+  ros__parameters:
+    joints:
+      - jbf1
+      - jbf2
+      - jbf3
+      - Bevelj1
+      - Bevelj2
+      - Tj1
+      - BeveljEE
+
+    command_interfaces:
+      - position
+
+    state_interfaces:
+      - position
+      - velocity

@@ -2,114 +2,145 @@
 import rclpy
 from rclpy.node import Node
 from trajectory_msgs.msg import JointTrajectory
+from std_msgs.msg import Float32MultiArray
 import serial
 import math
 import time
+import re
 
 class EspSerialBridge(Node):
     def __init__(self):
         super().__init__('esp_serial_bridge')
         
+        # ======================================================================
+        # --- 1. CONFIGURATION ---
+        # ======================================================================
         self.serial_port = '/dev/ttyUSB0' 
         self.baud_rate = 115200
         
-        # --- CALIBRATION ---
-        self.MIN_US = 550
-        self.MAX_US = 2400
-        self.MIN_DEG = 0
-        self.MAX_DEG = 180
-        self.OFFSET_DEG = 0.0 
-        
-        # Change detection threshold (8-bit encoder = ~7µs resolution)
-        self.CHANGE_THRESHOLD = 0.5  # Send almost every update (0.5µs precision)
-        self.last_sent = [0.0, 0.0, 0.0]
+        # Robot Physical Limits
+        self.MIN_DEG = 0.0
+        self.MAX_DEG = 180.0
+        # ======================================================================
 
+        # Setup Hardware
         try:
-            self.ser = serial.Serial(self.serial_port, self.baud_rate, timeout=0.1)
+            self.ser = serial.Serial(self.serial_port, self.baud_rate, timeout=0.01)
             self.get_logger().info(f"Connected to {self.serial_port}")
+            self.ser.reset_input_buffer()
         except Exception as e:
             self.get_logger().error(f"Serial Error: {e}")
             exit(1)
 
-        self.sub = self.create_subscription(
+        # Regex for "D0:12.3 D1:45.6 D2:78.9"
+        self.sensor_pattern = re.compile(r"D(\d):([\d\.]+)")
+
+        # ROS Interface
+        self.sub_traj = self.create_subscription(
             JointTrajectory, 
             '/delta/joint_commands', 
             self.traj_callback, 
-            10)
-
-    def map_deg_to_us(self, deg):
-        # 1. Apply Offset
-        deg += self.OFFSET_DEG
+            10
+        )
         
-        # 2. Clamp to physical limits (Safety)
-        deg = max(self.MIN_DEG, min(self.MAX_DEG, deg))
+        # Publishes [Dist0, Dist1, Dist2]
+        self.pub_sensors = self.create_publisher(Float32MultiArray, '/sharp_sensors/all', 10)
         
-        # 3. Linear Map
-        # (val - min_in) * (max_out - min_out) / (max_in - min_in) + min_out
-        us = (deg - self.MIN_DEG) * (self.MAX_US - self.MIN_US) / (self.MAX_DEG - self.MIN_DEG) + self.MIN_US
-        return us
+        self.get_logger().info("Serial Bridge node started (TF logic removed)")
 
+    # ==========================================================================
+    # --- 2. SERIAL PROCESSING ---
+    # ==========================================================================
+    def process_serial_data(self):
+        """Reads sensor data from ESP32 and publishes it to ROS"""
+        while self.ser.in_waiting > 0:
+            try:
+                line = self.ser.readline().decode('utf-8', errors='ignore').strip()
+                
+                # Check for format: "D0:150.2 D1:120.4 D2:60.1"
+                if "D0:" in line:
+                    matches = self.sensor_pattern.findall(line)
+                    
+                    if len(matches) == 3:
+                        # Sort by index (0, 1, 2)
+                        matches.sort(key=lambda x: int(x[0]))
+                        
+                        msg = Float32MultiArray()
+                        msg.data = [float(val) for _, val in matches]
+                        self.pub_sensors.publish(msg)
+                        
+            except Exception as e:
+                self.get_logger().warn(f"Serial Parse Error: {e}")
+
+    def wait_and_listen(self, duration_sec):
+        """Keeps the serial buffer clear while waiting for trajectory steps"""
+        start_time = time.time()
+        while (time.time() - start_time) < duration_sec:
+            self.process_serial_data()
+            time.sleep(0.001) 
+
+    # ==========================================================================
+    # --- 3. TRAJECTORY CALLBACK ---
+    # ==========================================================================
     def traj_callback(self, msg):
         if not msg.points: return
         
-        # Sort by time just in case
-        # sorted_points = sorted(msg.points, key=lambda p: p.time_from_start.sec + p.time_from_start.nanosec*1e-9)
-        
-        start_time = self.get_clock().now()
-        
         for i, point in enumerate(msg.points):
-            # 1. Get Duration logic
-            # msg.points[i].time_from_start is ABSOLUTE from start of trajectory
-            # We need DELTA from previous point
-            
+            # Calculate duration for this step
             t_abs_sec = point.time_from_start.sec + point.time_from_start.nanosec * 1e-9
             
-            if i == 0:
+            if i == 0: 
                 dt = t_abs_sec
             else:
                 prev = msg.points[i-1].time_from_start
-                t_prev_sec = prev.sec + prev.nanosec * 1e-9
-                dt = t_abs_sec - t_prev_sec
+                dt = t_abs_sec - (prev.sec + prev.nanosec * 1e-9)
             
-            # Duration in ms
-            duration_ms = int(dt * 1000)
-            if duration_ms < 20: duration_ms = 20
+            duration_ms = max(20, int(dt * 1000))
             
-            # 2. Extract Angles
-            rads = point.positions[0:3]
-            deg1 = math.degrees(rads[0])
-            deg2 = math.degrees(rads[1])
-            deg3 = math.degrees(rads[2])
+            if len(point.positions) < 3: continue
             
-            # 3. Cleanse
-            deg1 = max(self.MIN_DEG, min(self.MAX_DEG, deg1))
-            deg2 = max(self.MIN_DEG, min(self.MAX_DEG, deg2))
-            deg3 = max(self.MIN_DEG, min(self.MAX_DEG, deg3))
+            # Extract and Constrain Angles
+            degs = [math.degrees(p) for p in point.positions[:3]]
+            degs = [max(self.MIN_DEG, min(self.MAX_DEG, d)) for d in degs]
             
-            # 4. Formulate Command
-            cmds = [
-                f"T0:{deg1:.2f} D:{duration_ms}\n",
-                f"T1:{deg2:.2f} D:{duration_ms}\n",
-                f"T2:{deg3:.2f} D:{duration_ms}\n"
-            ]
+            # SEND COMMAND TO ESP32
+            # Format: T0:90.00 D:200\n
+            raw_degs = [math.degrees(p) for p in point.positions[:3]]
+        
+            # --- CALIBRATION FIX ---
+            # If the robot moves "Short", it means the physical arms are too low.
+            # We need to shift the zero point so the code matches reality.
+            # Try adding/subtracting 5 or 10 degrees.
             
-            # 5. Send
-            try:
-                for cmd in cmds:
-                    self.ser.write(cmd.encode('utf-8'))
-            except Exception as e:
-                self.get_logger().error(f"Write Failed: {e}")
-                
-            # 6. Wait for execution to finish before sending next point
-            # This creates the "Streaming" behavior
-            # We sleep for `dt` seconds
-            # Note: This blocks the callback, but that's what we want for this simple architecture
-            time.sleep(dt)
+            OFFSET = 05.0  # <--- ADJUST THIS. Try -10.0 or +10.0
+            
+            corrected_degs = [d + OFFSET for d in raw_degs]
+            
+            # Constrain
+            final_degs = [max(self.MIN_DEG, min(self.MAX_DEG, d)) for d in corrected_degs]
+            
+            # SEND COMMAND
+            for idx, deg in enumerate(final_degs):
+                cmd = f"T{idx}:{deg:.2f} D:{duration_ms}\n"
+                self.ser.write(cmd.encode('utf-8'))
+            
+            # Process incoming sensor data during the motion duration
+            self.wait_and_listen(dt)
 
 def main(args=None):
     rclpy.init(args=args)
-    rclpy.spin(EspSerialBridge())
-    rclpy.shutdown()
+    node = EspSerialBridge()
+    try:
+        while rclpy.ok():
+            # Check for new ROS messages
+            rclpy.spin_once(node, timeout_sec=0.01)
+            # Continually poll serial even if no new trajectory is received
+            node.process_serial_data()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
 
 if __name__ == '__main__':
     main()

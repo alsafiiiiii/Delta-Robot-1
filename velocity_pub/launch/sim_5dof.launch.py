@@ -60,7 +60,7 @@ def generate_launch_description():
             '-file', os.path.join(delta_robot_desc, 'models', 'conveyor.sdf'),
             '-name', 'conveyor_belt',
             '-x', '0.0',
-            '-y', '-0.0172',
+            '-y', '0.0',
             '-z', '-0.015'
         ],
         output='screen',
@@ -102,14 +102,6 @@ def generate_launch_description():
         parameters=[{'use_sim_time': True}]
     )
     
-    # 5. Simulation Control Bridge (ESP32-like interpolation for Gazebo)
-    sim_control = Node(
-        package='velocity_pub',
-        executable='sim_control.py',
-        name='sim_control_bridge',
-        output='screen',
-        parameters=[{'use_sim_time': True}]
-    )
     
     # 6. GUI Controller (optional)
     gui_controller = Node(
@@ -134,6 +126,5 @@ def generate_launch_description():
         spawn_landing_pad,
         controller_5dof,
         gui_controller,
-        sim_control,
         delayed_conveyor_manager,
     ])

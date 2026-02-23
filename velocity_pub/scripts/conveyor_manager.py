@@ -26,8 +26,9 @@ class ConveyorManagerV3(Node):
         
         # Locations
         # Locations
-        self.HOLDING_AREA_X = 0.0 ; self.HOLDING_AREA_Y = 1.0 # Store in Y instead of X
-        self.SPAWN_X = 0.5
+        self.HOLDING_AREA_X = 0.0
+        self.HOLDING_AREA_Y = -1.0 # Store in Y instead of X
+        self.SPAWN_X = -0.5
         self.SPAWN_Z = 0.2
         
         # State
@@ -41,7 +42,7 @@ class ConveyorManagerV3(Node):
         # Conveyor control
         self.conveyor_pub = self.create_publisher(Float64, '/conveyor/cmd_vel', 10)
         self.conveyor_sub = self.create_subscription(Float64, '/conveyor/cmd_vel', self.speed_cb, 10)
-        self.conveyor_speed = -0.15
+        self.conveyor_speed = 0.15
         
         # Initial Spawn (Blocking, but only once)
         self.spawn_pool()
@@ -103,7 +104,7 @@ class ConveyorManagerV3(Node):
         self.current_box_index = (self.current_box_index + 1) % self.pool_size
         
         # Randomize start
-        rand_y = random.uniform(-0.075, 0.075)
+        rand_y = random.uniform(-0.025, 0.025)
         rand_yaw = random.uniform(0, 3.14)
         
         self.teleport_box(box_name, self.SPAWN_X, rand_y, self.SPAWN_Z, rand_yaw)

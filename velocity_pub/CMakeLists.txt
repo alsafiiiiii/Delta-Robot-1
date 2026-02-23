@@ -49,9 +49,10 @@ install(
     scripts/delta_3dof_controller.py
     scripts/delta_explain.py
     scripts/pid_tuner.py
-    scripts/sim_control.py
     scripts/conveyor_manager.py
     scripts/task_sequencer.py
+    scripts/sensor_tf_publisher.py
+    scripts/tf_error_plotter.py
     launch/sim_5dof.launch.py
     DESTINATION lib/${PROJECT_NAME}
   )

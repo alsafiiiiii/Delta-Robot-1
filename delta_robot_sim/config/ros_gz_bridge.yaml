@@ -6,28 +6,16 @@
   gz_type_name: "gz.msgs.Clock"
   direction: GZ_TO_ROS
 
-# Joint trajectory commands (FIXED MODEL NAME)
-- ros_topic_name: "/model/delta_robot/joint_trajectory"
-  gz_topic_name: "/model/delta_robot/joint_trajectory"
-  ros_type_name: "trajectory_msgs/msg/JointTrajectory"
-  gz_type_name: "gz.msgs.JointTrajectory"
-  direction: ROS_TO_GZ
 
-# Joint states (FIXED MODEL NAME)
-- ros_topic_name: "/joint_states"
-  gz_topic_name: "/world/empty/model/delta_robot/joint_state"
-  ros_type_name: "sensor_msgs/msg/JointState"
-  gz_type_name: "gz.msgs.Model"
-  direction: GZ_TO_ROS
 
-# Pose/TF (FIXED MODEL NAME)
+# Pose/TF with frame ID remapping to remove model prefix
 - ros_topic_name: "/tf"
   gz_topic_name: "/model/delta_robot/pose"
   ros_type_name: "tf2_msgs/msg/TFMessage"
   gz_type_name: "gz.msgs.Pose_V"
   direction: GZ_TO_ROS
 
-# Static TF (FIXED MODEL NAME)
+# Static TF with frame ID remapping
 - ros_topic_name: "/tf_static"
   gz_topic_name: "/model/delta_robot/pose_static"
   ros_type_name: "tf2_msgs/msg/TFMessage"
@@ -51,6 +39,12 @@
 # Camera
 - ros_topic_name: "/camera/image_raw"
   gz_topic_name: "/camera/image_raw"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "gz.msgs.Image"
+  direction: GZ_TO_ROS
+
+- ros_topic_name: "/camera1/image_raw"
+  gz_topic_name: "/camera1/image_raw"
   ros_type_name: "sensor_msgs/msg/Image"
   gz_type_name: "gz.msgs.Image"
   direction: GZ_TO_ROS

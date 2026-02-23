@@ -1,181 +1,198 @@
 #!/usr/bin/env python3
 """
-Delta Robot Inverse Kinematics Module
+Delta Robot Inverse & Forward Kinematics (Radius/Vector Method)
 
-Pure Python implementation matching visual_kinematics.RobotDelta output.
-No external dependencies beyond math.
-
-Usage:
-    from delta_ik import DeltaIK
-    ik = DeltaIK()  # Uses default geometry
-    angles = ik.inverse(x, y, z)  # Returns (theta1, theta2, theta3) in radians
+Adapted to use specific Center-to-Joint measurements (Radius) 
+while maintaining Forward Kinematics capabilities.
 """
 import math
 from typing import Tuple, Optional
-import numpy as np
 
 class DeltaIK:
     """
-    Delta Robot Inverse Kinematics Solver.
+    Delta Robot Kinematics Solver (Radius-Based).
     
-    Geometry params match: RobotDelta(np.array([0.104, 0.040, 0.105, 0.205]))
+    Geometry parameters (in meters):
+        r_base: Distance from absolute center to motor shaft (Horizontal)
+        r_ee:   Distance from absolute center to end-effector joint (Horizontal)
+        l_upper: Upper arm (bicep) length (Center-to-Center)
+        l_lower: Lower arm (forearm) length (Center-to-Center)
     """
     
     def __init__(self, r_base: float = 0.104, r_ee: float = 0.040, 
-                 l_upper: float = 0.105, l_lower: float = 0.205):
+                 l_upper: float = 0.105, l_lower: float = 0.200):
         """
         Args:
-            r_base: Base platform radius (meters)
-            r_ee: End-effector platform radius (meters)  
-            l_upper: Upper arm length (meters)
-            l_lower: Lower arm / parallelogram length (meters)
+            r_base: Base radius (center to motor axis)
+            r_ee: End-effector radius (center to ball joint)
+            l_upper: Upper arm length
+            l_lower: Lower arm length
         """
-        self.l1 = l_upper
-        self.l2 = l_lower
-        self.r1 = r_base
+        self.r_base = r_base
+        self.r_ee = r_ee
+        self.rf = l_upper
+        self.re = l_lower
         
-        # Attachment points (matching visual_kinematics internals)
-        # These are end-effector attachment offsets relative to center
-        self.ap_x = [-r_ee, r_ee / 2, r_ee / 2]
-        self.ap_y = [0.0, -r_ee * math.sqrt(3) / 2, r_ee * math.sqrt(3) / 2]
-        
-        # Motor arm angles (120° spacing)
-        self.phi = [0.0, 2.0943951023931953, 4.1887902047863905]  # 0, 2π/3, 4π/3
-        self.cos_phi = [math.cos(p) for p in self.phi]
-        self.sin_phi = [math.sin(p) for p in self.phi]
+        # Pre-calculated constants
+        self.t = self.r_base - self.r_ee  # Horizontal distance difference
+        self.sqrt3 = math.sqrt(3.0)
+        self.sin120 = self.sqrt3 / 2.0
+        self.cos120 = -0.5
+        self.tan60 = self.sqrt3
+        self.sin30 = 0.5
+        self.tan30 = 1.0 / self.sqrt3
     
-    def _simplify_angle(self, angle: float) -> float:
-        """Normalize angle to [-π, π]"""
-        while angle <= -math.pi:
-            angle += 2 * math.pi
-        while angle > math.pi:
-            angle -= 2 * math.pi
-        return angle
+    def _calc_angle_yz(self, x0: float, y0: float, z0: float) -> Tuple[bool, float]:
+        """
+        Helper: Calculate angle theta for a leg projected onto the YZ plane.
+        Uses direct Radius logic: Motor is at Y = -r_base
+        """
+        # Motor position (y1) and Target relative to EE (y0)
+        y1 = -self.r_base
+        y0 = y0 - self.r_ee
+        
+        # Distance squared from origin to target point
+        # (This replaces the complex apothem math)
+        dist_sq = x0*x0 + y0*y0 + z0*z0
+        
+        # Intersection of circle (rf) and sphere (re)
+        # z = a + b*y
+        a = (dist_sq + self.rf*self.rf - self.re*self.re - y1*y1) / (2.0 * z0)
+        b = (y1 - y0) / z0
+        
+        # Discriminant
+        d = -(a + b*y1)*(a + b*y1) + self.rf*(b*b*self.rf + self.rf)
+        
+        if d < 0:
+            return (False, 0.0)  # Unreachable
+        
+        # Solve for yj (joint y position)
+        # We choose the outer point (standard delta config)
+        yj = (y1 - a*b - math.sqrt(d)) / (b*b + 1.0)
+        zj = a + b*yj
+        
+        # Calculate theta relative to motor shaft
+        theta = math.atan2(-zj, y1 - yj) * 180.0 / math.pi
+        
+        return (True, theta)
+    
+    def inverse_deg(self, x_in: float, y_in: float, z_in: float) -> Tuple[float, float, float]:
+        """
+        Inverse kinematics: (x, y, z) -> (theta1, theta2, theta3) in DEGREES.
+        INCLUDES ROTATION: Inputs are rotated so +X aligns with Motor 1.
+        """
+        # 1. Coordinate Rotation: User(+X) -> Solver(-Y)
+        # We map User X to Solver Y, and User Y to Solver -X
+        # (Rotation of -90 degrees)
+        x0 = y_in
+        y0 = -x_in
+        z0 = z_in
+        success1, theta1 = self._calc_angle_yz(x0, y0, z0)
+        if not success1:
+            raise ValueError(f"Position ({x0:.3f}, {y0:.3f}, {z0:.3f}) unreachable (Leg 1)")
+        
+        # Leg 2: Rotate +120
+        x2 = x0 * self.cos120 + y0 * self.sin120
+        y2 = y0 * self.cos120 - x0 * self.sin120
+        success2, theta2 = self._calc_angle_yz(x2, y2, z0)
+        if not success2:
+            raise ValueError(f"Position ({x0:.3f}, {y0:.3f}, {z0:.3f}) unreachable (Leg 2)")
+        
+        # Leg 3: Rotate -120  
+        x3 = x0 * self.cos120 - y0 * self.sin120
+        y3 = y0 * self.cos120 + x0 * self.sin120
+        success3, theta3 = self._calc_angle_yz(x3, y3, z0)
+        if not success3:
+            raise ValueError(f"Position ({x0:.3f}, {y0:.3f}, {z0:.3f}) unreachable (Leg 3)")
+        
+        return (theta1, theta2, theta3)
     
     def inverse(self, x: float, y: float, z: float) -> Tuple[float, float, float]:
-        """
-        Compute inverse kinematics for Cartesian position.
-        
-        Args:
-            x, y, z: Target position in meters
-            
-        Returns:
-            (theta1, theta2, theta3): Joint angles in RADIANS
-            
-        Raises:
-            ValueError: If position is outside workspace
-        """
-        theta = []
-        
-        for i in range(3):
-            # Vector from attachment point to target
-            oa_x = x - self.ap_x[i]
-            oa_y = y - self.ap_y[i]
-            oa_z = z
-            
-            norm_oa_sq = oa_x**2 + oa_y**2 + oa_z**2
-            
-            # Coefficients for: a*sin(θ) + b*cos(θ) = c
-            a = 2.0 * self.l1 * z
-            
-            cp = self.cos_phi[i]
-            sp = self.sin_phi[i]
-            
-            term1 = (self.r1 * cp) - oa_x
-            term2 = (self.r1 * sp) - oa_y
-            b = 2.0 * self.l1 * (cp * term1 + sp * term2)
-            
-            c = (self.l2**2 - self.l1**2 - norm_oa_sq - self.r1**2 + 
-                 2.0 * self.r1 * (cp * oa_x + sp * oa_y))
-            
-            # Solve using: θ = atan2(c, -√(a²+b²-c²)) - atan2(b, a)
-            disc = a*a + b*b - c*c
-            if disc < 0:
-                raise ValueError(f"Position ({x}, {y}, {z}) outside workspace")
-            
-            angle = math.atan2(c, -math.sqrt(disc)) - math.atan2(b, a)
-            theta.append(self._simplify_angle(angle))
-        
-        return (theta[0], theta[1], theta[2])
+        """Returns angles in RADIANS"""
+        deg = self.inverse_deg(x, y, z)
+        return (math.radians(deg[0]), math.radians(deg[1]), math.radians(deg[2]))
     
-    def inverse_deg(self, x: float, y: float, z: float) -> Tuple[float, float, float]:
-        """Same as inverse() but returns angles in DEGREES."""
-        rads = self.inverse(x, y, z)
-        return (math.degrees(rads[0]), math.degrees(rads[1]), math.degrees(rads[2]))
+    def forward(self, theta1: float, theta2: float, theta3: float) -> Tuple[float, float, float]:
+        """
+        Forward kinematics: (theta1, theta2, theta3) -> (x, y, z)
+        Args: Angles in DEGREES
+        """
+        # t is the horizontal radius difference
+        t = self.t 
+        
+        # Convert to radians
+        t1 = math.radians(theta1)
+        t2 = math.radians(theta2)
+        t3 = math.radians(theta3)
+        
+        # Calculate elbow positions (spheres 1, 2, 3)
+        # y1, z1 are in the local frame of Leg 1
+        y1 = -(t + self.rf * math.cos(t1))
+        z1 = -self.rf * math.sin(t1)
+        
+        # y2, x2, z2 for Leg 2 (rotated 120)
+        y2 = (t + self.rf * math.cos(t2)) * self.sin30
+        x2 = y2 * self.tan60
+        z2 = -self.rf * math.sin(t2)
+        
+        # y3, x3, z3 for Leg 3 (rotated 240)
+        y3 = (t + self.rf * math.cos(t3)) * self.sin30
+        x3 = -y3 * self.tan60
+        z3 = -self.rf * math.sin(t3)
+        
+        dnm = (y2 - y1) * x3 - (y3 - y1) * x2
+        
+        w1 = y1*y1 + z1*z1
+        w2 = x2*x2 + y2*y2 + z2*z2
+        w3 = x3*x3 + y3*y3 + z3*z3
+        
+        # Intersection of 3 spheres (trilateration)
+        # x = (a1*z + b1) / dnm
+        a1 = (z2 - z1) * (y3 - y1) - (z3 - z1) * (y2 - y1)
+        b1 = -((w2 - w1) * (y3 - y1) - (w3 - w1) * (y2 - y1)) / 2.0
+        
+        # y = (a2*z + b2) / dnm
+        a2 = -(z2 - z1) * x3 + (z3 - z1) * x2
+        b2 = ((w2 - w1) * x3 - (w3 - w1) * x2) / 2.0
+        
+        # a*z^2 + b*z + c = 0
+        a = a1*a1 + a2*a2 + dnm*dnm
+        b = 2.0 * (a1*b1 + a2*(b2 - y1*dnm) - z1*dnm*dnm)
+        c = (b2 - y1*dnm)*(b2 - y1*dnm) + b1*b1 + dnm*dnm*(z1*z1 - self.re*self.re)
+        
+        # Discriminant
+        d = b*b - 4.0*a*c
+        if d < 0:
+            raise ValueError("Angles result in unreachable position (Non-intersecting spheres)")
+        
+        # Choose the solution (usually negative Z for delta robots)
+        z0 = -0.5 * (b + math.sqrt(d)) / a
+        x0 = (a1*z0 + b1) / dnm
+        y0 = (a2*z0 + b2) / dnm
+        
+        # Rotate back to User Frame: Solver(-Y) -> User(+X)
+        # x_user = -y_solver, y_user = x_solver
+        return (-y0, x0, z0)
+
+    # ------------------------------------------------------------------
+    # UTILITY FUNCTIONS
+    # ------------------------------------------------------------------
     
     def check_position(self, x: float, y: float, z: float) -> dict:
-        """
-        Check if position is valid and how close to workspace limits.
-        
-        Returns:
-            dict with keys:
-                'valid': bool - True if position is reachable
-                'warning': str or None - Warning message if close to limits
-                'margin': float - Smallest discriminant margin (lower = closer to limit)
-        """
-        min_disc = float('inf')
-        
-        for i in range(3):
-            # Calculate discriminant (same as in inverse())
-            oa_x = x - self.ap_x[i]
-            oa_y = y - self.ap_y[i]
-            oa_z = z
-            
-            norm_oa_sq = oa_x**2 + oa_y**2 + oa_z**2
-            
-            a = 2.0 * self.l1 * z
-            cp = self.cos_phi[i]
-            sp = self.sin_phi[i]
-            
-            term1 = (self.r1 * cp) - oa_x
-            term2 = (self.r1 * sp) - oa_y
-            b = 2.0 * self.l1 * (cp * term1 + sp * term2)
-            
-            c = (self.l2**2 - self.l1**2 - norm_oa_sq - self.r1**2 + 
-                 2.0 * self.r1 * (cp * oa_x + sp * oa_y))
-            
-            disc = a*a + b*b - c*c
-            min_disc = min(min_disc, disc)
-        
-        # Determine status
-        if min_disc < 0:
-            return {
-                'valid': False,
-                'warning': f'Position ({x:.3f}, {y:.3f}, {z:.3f}) is OUTSIDE workspace',
-                'margin': min_disc
-            }
-        elif min_disc < 0.001:  # Very close to limit
-            return {
-                'valid': True,
-                'warning': f'WARNING: Position near workspace boundary (margin={min_disc:.4f})',
-                'margin': min_disc
-            }
-        elif min_disc < 0.01:  # Somewhat close
-            return {
-                'valid': True,
-                'warning': f'Caution: Approaching workspace limit (margin={min_disc:.4f})',
-                'margin': min_disc
-            }
-        else:
-            return {
-                'valid': True,
-                'warning': None,
-                'margin': min_disc
-            }
-    
+        try:
+            self.inverse_deg(x, y, z)
+            return {'valid': True, 'warning': None}
+        except ValueError as e:
+            return {'valid': False, 'warning': str(e)}
+
     def is_reachable(self, x: float, y: float, z: float) -> bool:
-        """Quick check if position is reachable."""
         return self.check_position(x, y, z)['valid']
 
 
-# Convenience function for drop-in replacement
+# Convenience functions
 _default_ik = None
 
 def get_joint_angles(x: float, y: float, z: float) -> Tuple[float, float, float]:
-    """
-    Quick function to get joint angles (radians) for a position.
-    Uses default robot geometry.
-    """
     global _default_ik
     if _default_ik is None:
         _default_ik = DeltaIK()
@@ -183,19 +200,29 @@ def get_joint_angles(x: float, y: float, z: float) -> Tuple[float, float, float]
 
 
 if __name__ == "__main__":
-    # Quick test
+    # Test with your setup
     ik = DeltaIK()
-    test_points = [
-        (0.0, 0.0, -0.22),
-        (0.05, 0.05, -0.25),
-        (-0.05, 0.02, -0.20),
+    
+    # Test points (X, Y, Z)
+    points = [
+        (0.0, 0.0, -0.25),
+        (0.05, 0.05, -0.20),
     ]
     
-    print("Delta IK Test (comparing with your verify_ik_math.py values)")
-    print("-" * 50)
-    for pt in test_points:
+    print("Corrected Delta IK Test (Radius-Based)")
+    print("=" * 60)
+    for p in points:
         try:
-            angles = ik.inverse_deg(*pt)
-            print(f"Position {pt} -> Angles: {angles[0]:.2f}°, {angles[1]:.2f}°, {angles[2]:.2f}°")
+            # 1. Inverse Kinematics
+            angs = ik.inverse_deg(*p)
+            print(f"Pos: {p}")
+            print(f" -> Angles: {angs[0]:.2f}, {angs[1]:.2f}, {angs[2]:.2f}")
+            
+            # 2. Forward Kinematics Verification
+            calc_pos = ik.forward(*angs)
+            err = math.sqrt(sum((a-b)**2 for a,b in zip(p, calc_pos)))
+            print(f" <- FK Calc: ({calc_pos[0]:.4f}, {calc_pos[1]:.4f}, {calc_pos[2]:.4f})")
+            print(f"    Error:   {err*1000:.4f} mm")
+            print("-" * 60)
         except ValueError as e:
-            print(f"Position {pt} -> {e}")
+            print(f"Error for {p}: {e}")
