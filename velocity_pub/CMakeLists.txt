@@ -53,7 +53,10 @@ install(
     scripts/task_sequencer.py
     scripts/sensor_tf_publisher.py
     scripts/tf_error_plotter.py
-    launch/sim_5dof.launch.py
+    # Add these supporting modules:
+    scripts/delta_ik.py
+    scripts/delta_utils.py
+    scripts/vector_ruckig.py
     DESTINATION lib/${PROJECT_NAME}
   )
 

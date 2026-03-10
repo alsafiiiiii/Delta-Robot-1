@@ -83,7 +83,7 @@ class BatchTuner(Node):
         avg_wobble = np.mean(self.batch_wobbles)
         avg_acc = np.mean(self.batch_accuracies)
         
-        print(f"\n====== BATCH COMPLETE ======")
+        print("\n====== BATCH COMPLETE ======")
         print(f"AVG Wobble: {avg_wobble:.1f} (Target < 50)")
         print(f"AVG Accuracy: {avg_acc:.1f}mm (Target < 3mm)")
         

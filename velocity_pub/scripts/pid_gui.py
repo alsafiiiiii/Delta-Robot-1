@@ -25,7 +25,7 @@ def process():
 
     # Calculations
     inv_J = [-x for x in J]
-    L_new = [l + j for l, j in zip(L, J)] # L - (-J)
+    L_new = [val + j for val, j in zip(L, J)] # L - (-J)
 
     def fmt(nums): 
         return " ".join(f"{x:.{prec}f}".rstrip('0').rstrip('.') or "0" for x in nums)

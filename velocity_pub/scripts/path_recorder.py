@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import threading
 from collections import deque
-import numpy as np
 
 # --- CONFIGURATION ---
 FIXED_FRAME = 'delta_robot/world_link'
@@ -106,7 +105,7 @@ def main(args=None):
     # Start Animation
     # interval=20ms = 50 FPS
     # blit=True ONLY redraws the lines, not the grid/axes
-    ani = FuncAnimation(fig, update_plot, init_func=init, interval=20, blit=True)
+    FuncAnimation(fig, update_plot, init_func=init, interval=20, blit=True)
     
     try:
         plt.show()

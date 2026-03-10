@@ -3,7 +3,7 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Joy
 from geometry_msgs.msg import Pose, Twist
-from std_msgs.msg import Empty, Bool
+from std_msgs.msg import Bool
 
 class JoystickController(Node):
     def __init__(self):
@@ -107,9 +107,12 @@ class JoystickController(Node):
         # RPY -> Quaternion
         import math
         r, p, y = self.target_rpy
-        cy = math.cos(y * 0.5); sy = math.sin(y * 0.5)
-        cp = math.cos(p * 0.5); sp = math.sin(p * 0.5)
-        cr = math.cos(r * 0.5); sr = math.sin(r * 0.5)
+        cy = math.cos(y * 0.5)
+        sy = math.sin(y * 0.5)
+        cp = math.cos(p * 0.5)
+        sp = math.sin(p * 0.5)
+        cr = math.cos(r * 0.5)
+        sr = math.sin(r * 0.5)
         
         msg.orientation.w = cr * cp * cy + sr * sp * sy
         msg.orientation.x = sr * cp * cy - cr * sp * sy

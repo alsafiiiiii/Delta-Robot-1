@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 import csv
 import numpy as np
-from scipy.optimize import curve_fit
-import matplotlib.pyplot as plt
 
 def load_data(filename):
     times = []
@@ -10,7 +8,7 @@ def load_data(filename):
     outputs = []
     with open(filename, 'r') as f:
         reader = csv.reader(f)
-        header = next(reader) # Skip header
+        next(reader) # Skip header
         for row in reader:
             if not row: continue
             try:
@@ -120,8 +118,8 @@ def main():
 
     # Average K
     K_avg = np.median(results_k)
-    print(f"\n--- SYSTEM IDENTIFICATION ---")
-    print(f"System Type: Integrator (Velocity -> Position)")
+    print("\n--- SYSTEM IDENTIFICATION ---")
+    print("System Type: Integrator (Velocity -> Position)")
     print(f"Estimated Gain (K): {K_avg:.4f} (m/s / cmd_vel)")
     
     # --- TUNING RULES (SIMC / Skogestad) ---
@@ -137,7 +135,7 @@ def main():
     
     theta = 0.06 # Assuming 60ms total system lag (camera + comms) as safe baseline
     
-    print(f"\n--- PID TUNING (SIMC Rules) ---")
+    print("\n--- PID TUNING (SIMC Rules) ---")
     print(f"Assumed System Lag (theta): {theta:.3f}s")
     
     for aggressive, mode in [(1.0, "Aggressive"), (2.0, "Moderate"), (4.0, "Smooth")]:

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import Pose, Twist
+from geometry_msgs.msg import Pose
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from builtin_interfaces.msg import Duration
 import math
@@ -46,7 +46,13 @@ class SmoothDeltaController(Node):
             self.get_logger().info(f"Mode: REAL ROBOT. Publishing to {topic}")
 
         # Publishers / Subscribers
-        self.joint_pub = self.create_publisher(JointTrajectory, topic, 10)
+        from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
+        qos_profile = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=10
+        )
+        self.joint_pub = self.create_publisher(JointTrajectory, topic, qos_profile)
         
         # Time-encoded trajectory (for G-code)
         self.cart_sub = self.create_subscription(

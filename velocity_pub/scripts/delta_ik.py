@@ -6,7 +6,7 @@ Adapted to use specific Center-to-Joint measurements (Radius)
 while maintaining Forward Kinematics capabilities.
 """
 import math
-from typing import Tuple, Optional
+from typing import Tuple
 
 class DeltaIK:
     """

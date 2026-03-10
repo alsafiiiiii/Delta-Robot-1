@@ -4,7 +4,6 @@ from rclpy.node import Node
 from std_msgs.msg import Float32MultiArray
 import csv
 import time
-import os
 
 class PIDLogger(Node):
     def __init__(self):

@@ -5,7 +5,6 @@ Shared constants and helper functions for Delta Robot controllers.
 """
 
 import math
-import numpy as np
 
 # ==================== WORKSPACE LIMITS ====================
 # These define the operational bounds of the robot

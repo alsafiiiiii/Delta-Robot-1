@@ -122,7 +122,7 @@ def main(args=None):
     node = TFErrorPlotter()
     
     # Setup animation
-    ani = animation.FuncAnimation(
+    animation.FuncAnimation(
         node.fig, 
         node.update_plot, 
         interval=50,  # 20 Hz

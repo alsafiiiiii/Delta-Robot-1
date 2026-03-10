@@ -24,7 +24,7 @@ from launch_ros.actions import Node
 def generate_launch_description():
     # Get package paths
     delta_robot_sim = get_package_share_directory('delta_robot_sim')
-    velocity_pub = get_package_share_directory('velocity_pub')
+    get_package_share_directory('velocity_pub')
     delta_robot_desc = get_package_share_directory('delta_robot_description')
     
     # Launch arguments

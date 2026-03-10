@@ -15,7 +15,6 @@ from tf2_ros import TransformListener, Buffer
 import tf2_ros
 import time
 import numpy as np
-from scipy.optimize import minimize
 
 class IKCalibrator(Node):
     def __init__(self):
@@ -135,7 +134,7 @@ class IKCalibrator(Node):
         scale_x = np.std(meas[:, 0]) / np.std(cmd[:, 0]) if np.std(cmd[:, 0]) > 0.001 else 1.0
         scale_y = np.std(meas[:, 1]) / np.std(cmd[:, 1]) if np.std(cmd[:, 1]) > 0.001 else 1.0
         
-        self.get_logger().info(f"\nScaling Factors:")
+        self.get_logger().info("\nScaling Factors:")
         self.get_logger().info(f"  X: {scale_x:.4f} (actual/commanded)")
         self.get_logger().info(f"  Y: {scale_y:.4f} (actual/commanded)")
         
@@ -147,7 +146,7 @@ class IKCalibrator(Node):
             'l_lower': 0.205
         }
         
-        self.get_logger().info(f"\nCurrent Geometry Parameters:")
+        self.get_logger().info("\nCurrent Geometry Parameters:")
         self.get_logger().info(f"  r_base  = {current_params['r_base']*1000:.1f} mm")
         self.get_logger().info(f"  r_ee    = {current_params['r_ee']*1000:.1f} mm")
         self.get_logger().info(f"  l_upper = {current_params['l_upper']*1000:.1f} mm")
@@ -160,19 +159,19 @@ class IKCalibrator(Node):
         self.get_logger().info(f"\nSuggested Corrections (based on {avg_scale:.3f} average scale):")
         
         if avg_scale < 0.95:
-            self.get_logger().info(f"  Robot moves LESS than commanded → Arms might be SHORTER")
+            self.get_logger().info("  Robot moves LESS than commanded → Arms might be SHORTER")
             suggested_l_lower = current_params['l_lower'] * avg_scale
             self.get_logger().info(f"  Try: l_lower = {suggested_l_lower*1000:.1f} mm (currently {current_params['l_lower']*1000:.1f} mm)")
         elif avg_scale > 1.05:
-            self.get_logger().info(f"  Robot moves MORE than commanded → Arms might be LONGER")
+            self.get_logger().info("  Robot moves MORE than commanded → Arms might be LONGER")
             suggested_l_lower = current_params['l_lower'] * avg_scale
             self.get_logger().info(f"  Try: l_lower = {suggested_l_lower*1000:.1f} mm (currently {current_params['l_lower']*1000:.1f} mm)")
         else:
-            self.get_logger().info(f"  Scaling is close to 1.0 - geometry seems correct!")
-            self.get_logger().info(f"  Errors might be due to:")
-            self.get_logger().info(f"    - Sensor calibration (HOME_OFFSET)")
-            self.get_logger().info(f"    - Mechanical play/backlash")
-            self.get_logger().info(f"    - Coordinate frame mismatch")
+            self.get_logger().info("  Scaling is close to 1.0 - geometry seems correct!")
+            self.get_logger().info("  Errors might be due to:")
+            self.get_logger().info("    - Sensor calibration (HOME_OFFSET)")
+            self.get_logger().info("    - Mechanical play/backlash")
+            self.get_logger().info("    - Coordinate frame mismatch")
         
         # Save detailed results
         results_file = '/tmp/ik_calibration_results.txt'

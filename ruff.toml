@@ -1,0 +1,7 @@
+# Exclude the archive so you can focus on active code
+extend-exclude = ["archive"]
+
+[lint]
+# Ignore "Multiple statements on one line" (E701) 
+# because it's common in quick ROS/Robot logic
+ignore = ["E701"]

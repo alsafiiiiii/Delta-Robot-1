@@ -3,9 +3,8 @@ import math
 from pathlib import Path
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, SetEnvironmentVariable
+from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 def generate_launch_description():
@@ -34,7 +33,7 @@ def generate_launch_description():
     # Load Box SDF
     box_sdf_file = os.path.join(delta_robot_description_path, 'models', 'box.sdf')
     with open(box_sdf_file, 'r') as infp:
-        box_desc = infp.read()
+        infp.read()
 
     # Pre-process SDF to replace $(find delta_robot_sim) with actual path
     # because standard SDF parser doesn't resolve $(find ...)

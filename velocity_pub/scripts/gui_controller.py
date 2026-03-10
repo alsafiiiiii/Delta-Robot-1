@@ -2,14 +2,12 @@
 import sys
 import math
 import rclpy
-from rclpy.node import Node
-from rclpy.executors import MultiThreadedExecutor
 from geometry_msgs.msg import Pose, Twist
 from std_msgs.msg import Bool, Float64
 
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, 
                              QSlider, QLabel, QGroupBox, QPushButton, QCheckBox)
-from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal
+from PyQt5.QtCore import Qt, QTimer, QThread
 
 # --- WORKER THREAD FOR ROS 2 ---
 class RosThread(QThread):
