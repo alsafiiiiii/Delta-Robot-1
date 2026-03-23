@@ -23,7 +23,7 @@ class SimControlBridge(Node):
         super().__init__('sim_control_bridge')
         
         # --- CONFIGURATION (Matching ESP32 firmware) ---
-        self.CONTROL_FREQ_HZ = 50  # Match ESP32 control loop
+        self.CONTROL_FREQ_HZ = 100  # Match ESP32 control loop and 5DOF controller (increased from 50Hz)
         self.HYBRID_FACTOR = 0.8   # 0.0=Linear, 1.0=Cubic (match firmware)
         
         # Current joint state (radians)
@@ -55,7 +55,7 @@ class SimControlBridge(Node):
         self.dt = 1.0 / self.CONTROL_FREQ_HZ
         self.timer = self.create_timer(self.dt, self.control_loop)
         
-        self.get_logger().info(f'Sim Control Bridge Started @ {self.CONTROL_FREQ_HZ}Hz')
+        self.get_logger().info(f'Sim Control Bridge Started @ {self.CONTROL_FREQ_HZ}Hz (increased)')
     
     def command_callback(self, msg):
         """Receive new target trajectory from controller."""

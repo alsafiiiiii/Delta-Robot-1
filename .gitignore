@@ -1,3 +1,5 @@
 .vscode/
 repo/
 servo/build/
+servo/.cache/
+velocity_pub/scripts/__pycache__/

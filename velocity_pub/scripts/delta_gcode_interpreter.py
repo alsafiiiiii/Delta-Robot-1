@@ -133,36 +133,44 @@ class GCodeVirtualMachine(Node):
         dy = y - self.pos['Y']
         dz = z - self.pos['Z']
         dist = math.sqrt(dx**2 + dy**2 + dz**2)
-        
+
         # Calculate duration
         if dist > 0.0001:
             duration_sec = dist / self.robot_speed
         else:
             duration_sec = 0.250 # Minimum move time for safety/homing
-            
-        # Create Cartesian Trajectory Message
-        msg = JointTrajectory()
-        msg.header.stamp = self.get_clock().now().to_msg()
-        msg.joint_names = ['x', 'y', 'z'] # Cartesian axes
-        
-        point = JointTrajectoryPoint()
-        point.positions = [float(x), float(y), float(z)]
-        point.time_from_start = Duration(sec=int(duration_sec), nanosec=int((duration_sec % 1)*1e9))
-        msg.points.append(point)
-        
-        self.traj_pub_.publish(msg)
-        
-        self.get_logger().info(f"Move: ({x:.3f}, {y:.3f}, {z:.3f}) T={duration_sec:.3f}s")
-        
+
+        # Interpolation parameters
+        interp_rate = 100.0  # Hz
+        steps = max(2, int(duration_sec * interp_rate))
+        sleep_dt = duration_sec / steps
+
+        for i in range(1, steps + 1):
+            alpha = i / steps
+            interp_x = self.pos['X'] + dx * alpha
+            interp_y = self.pos['Y'] + dy * alpha
+            interp_z = self.pos['Z'] + dz * alpha
+
+            msg = JointTrajectory()
+            msg.header.stamp = self.get_clock().now().to_msg()
+            msg.joint_names = ['x', 'y', 'z']
+
+            point = JointTrajectoryPoint()
+            point.positions = [float(interp_x), float(interp_y), float(interp_z)]
+            point.time_from_start = Duration(sec=0, nanosec=int(sleep_dt * 1e9))
+            msg.points.append(point)
+
+            self.traj_pub_.publish(msg)
+            time.sleep(sleep_dt)
+
+        self.get_logger().info(f"Move: ({x:.3f}, {y:.3f}, {z:.3f}) T={duration_sec:.3f}s, steps={steps}")
+
         # Update State
         self.pos['X'] = x
         self.pos['Y'] = y
         self.pos['Z'] = z
         self.pos['A'] = a
         self.pos['C'] = c
-        
-        # Wait for move to complete (VM blocking)
-        time.sleep(duration_sec)
 
 def main(args=None):
     rclpy.init(args=args)

@@ -134,34 +134,34 @@ class GCodeVirtualMachine(Node):
         dy = y - self.pos['Y']
         dz = z - self.pos['Z']
         dist = math.sqrt(dx**2 + dy**2 + dz**2)
-        
+
         # Calculate duration
         if dist > 0.0001:
             duration_sec = dist / self.robot_speed
         else:
             duration_sec = 0.250 # Minimum move time for safety/homing
-            
-        # Create Cartesian Trajectory Message
+
+        # Create Cartesian Trajectory Message (5DOF)
         msg = JointTrajectory()
         msg.header.stamp = self.get_clock().now().to_msg()
-        msg.joint_names = ['x', 'y', 'z'] # Cartesian axes
-        
+        msg.joint_names = ['x', 'y', 'z', 'a', 'c'] # 5DOF axes
+
         point = JointTrajectoryPoint()
-        point.positions = [float(x), float(y), float(z)]
+        point.positions = [float(x), float(y), float(z), float(a), float(c)]
         point.time_from_start = Duration(sec=int(duration_sec), nanosec=int((duration_sec % 1)*1e9))
         msg.points.append(point)
-        
+
         self.traj_pub_.publish(msg)
-        
-        self.get_logger().info(f"Move: ({x:.3f}, {y:.3f}, {z:.3f}) T={duration_sec:.3f}s")
-        
+
+        self.get_logger().info(f"Move: ({x:.3f}, {y:.3f}, {z:.3f}, {a:.3f}, {c:.3f}) T={duration_sec:.3f}s")
+
         # Update State
         self.pos['X'] = x
         self.pos['Y'] = y
         self.pos['Z'] = z
         self.pos['A'] = a
         self.pos['C'] = c
-        
+
         # Wait for move to complete (VM blocking)
         time.sleep(duration_sec)
 

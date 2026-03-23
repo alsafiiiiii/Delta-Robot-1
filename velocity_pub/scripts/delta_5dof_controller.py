@@ -34,10 +34,10 @@ class SmoothDeltaController5DOF(Node):
         super().__init__('smooth_delta_controller_5dof')
         
         # --- CONTROL PARAMETERS ---
-        self.loop_rate = 50.0  # Hz (match sim_control)
+        self.loop_rate = 100.0  # Hz (increased from 50Hz)
         self.dt = 1.0 / self.loop_rate
-        self.linear_speed = 0.10  # m/s
-        self.angular_speed = 2.0  # rad/s
+        self.linear_speed = 100.0  # m/s (default high speed)
+        self.angular_speed = 100.0  # rad/s (default high speed)
         
         # --- GEOMETRY ---
         # Tool offset for 5DOF (distance from wrist to end-effector tip)
@@ -60,10 +60,16 @@ class SmoothDeltaController5DOF(Node):
         self.is_moving = False
         
         # --- ROS INTERFACE ---
-        # Output: joint commands (goes to sim_control or robot_control)
-        self.joint_pub = self.create_publisher(
-            JointTrajectory, 
-            '/delta/joint_commands', 
+        # Output: joint commands (real robot)
+        self.joint_pub_real = self.create_publisher(
+            JointTrajectory,
+            '/delta/joint_commands',
+            10
+        )
+        # Output: joint commands (simulation)
+        self.joint_pub_sim = self.create_publisher(
+            JointTrajectory,
+            '/joint_trajectory_controller/joint_trajectory',
             10
         )
         
@@ -94,7 +100,7 @@ class SmoothDeltaController5DOF(Node):
         # Control loop timer
         self.timer = self.create_timer(self.dt, self.control_loop)
         
-        self.get_logger().info('5DOF Delta Controller Started @ 50Hz')
+        self.get_logger().info('5DOF Delta Controller Started @ 100Hz (speed params increased, data rate to robot is 100Hz)')
 
     def target_callback(self, msg):
         """Direct pose command (realtime control)."""
@@ -182,42 +188,41 @@ class SmoothDeltaController5DOF(Node):
         self.solve_and_publish()
 
     def solve_and_publish(self):
-        """Compute IK and publish joint commands."""
+        """Compute IK and publish joint commands to both sim and real topics."""
         try:
             # 5DOF: Compute wrist position accounting for tool offset
-            # The tool tip is offset from the wrist by tool_offset in the Z direction
-            # When tilted, this offset rotates
             offset_y = self.tool_offset * math.sin(self.current_tilt)
             offset_z = self.tool_offset * math.cos(self.current_tilt)
-            
+
             wrist_x = self.current_pos[0]
             wrist_y = self.current_pos[1] - offset_y
             wrist_z = self.current_pos[2] + offset_z - self.tool_offset  # Subtract base offset
-            
+
             # Solve IK for wrist position
             t1, t2, t3 = self.ik.inverse(wrist_x, wrist_y, wrist_z)
-            
+
             # Bevel gear kinematics (for tilt and spin)
-            # b1 and b2 are the two bevel gear joint angles
             b1 = self.current_tilt + 2 * self.current_spin
             b2 = 2 * self.current_spin - self.current_tilt
-            
+
             # Build joint trajectory message
             msg = JointTrajectory()
             msg.joint_names = ['jbf1', 'jbf2', 'jbf3', 'Bevelj1', 'Bevelj2', 'Tj1', 'BeveljEE']
-            
+
             point = JointTrajectoryPoint()
             point.positions = [
-                float(t1), float(t2), float(t3),  # Delta arm joints (radians)
-                float(b1), float(b2),              # Bevel gear joints
-                float(self.current_tilt),          # Tilt joint
-                float(self.current_spin)           # Spin joint
+                float(t1), float(t2), float(t3),
+                float(b1), float(b2),
+                float(self.current_tilt),
+                float(self.current_spin)
             ]
             point.time_from_start = Duration(sec=0, nanosec=int(self.dt * 1e9))
             msg.points.append(point)
-            
-            self.joint_pub.publish(msg)
-            
+
+            # Publish to both real and sim topics
+            self.joint_pub_real.publish(msg)
+            self.joint_pub_sim.publish(msg)
+
         except ValueError as e:
             self.get_logger().warn(f"IK Error: {e}")
 
