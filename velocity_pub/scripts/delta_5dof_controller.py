@@ -112,7 +112,7 @@ class SmoothDeltaController5DOF(Node):
             msg.orientation.z, msg.orientation.w
         )
         self.target_tilt = roll  # Tilt around X axis
-        self.target_spin = yaw   # Spin around Z axis
+        self.target_spin = yaw  # Spin around Z axis
         # self.get_logger().info(f"Target Pose: {self.target_pos}, Tilt: {self.target_tilt:.3f}, Spin: {self.target_spin:.3f}")
         if abs(yaw) > 0.1: # Only log if there is significant yaw
              self.get_logger().info(f"Received Yaw: {yaw:.3f}")

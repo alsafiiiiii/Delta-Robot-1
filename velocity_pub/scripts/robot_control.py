@@ -22,8 +22,8 @@ class EspSerialBridge(Node):
         self.MIN_DEG = 0.0
         self.MAX_DEG = 180.0
         
-        # Store targets for the 100Hz loop
-        self.target_angles = [90.0, 90.0, 90.0]
+        # --- EXPANDED TO 5 TARGETS ---
+        self.target_angles = [90.0, 90.0, 90.0, 90.0, 90.0]
         # ======================================================================
 
         # Setup Hardware
@@ -39,7 +39,6 @@ class EspSerialBridge(Node):
             self.get_logger().error(f"Serial Error: {e}")
             exit(1)
 
-        # Regex for "D0:12.3 D1:45.6 D2:78.9"
         self.sensor_pattern = re.compile(r"D(\d):([\d\.]+)")
 
         # ROS Interface
@@ -50,12 +49,10 @@ class EspSerialBridge(Node):
             10
         )
         
-        # Publishes [Dist0, Dist1, Dist2]
         self.pub_sensors = self.create_publisher(Float32MultiArray, '/sharp_sensors/all', 10)
-        self.get_logger().info("Serial Bridge node started (100Hz Mode active)")
+        self.get_logger().info("Serial Bridge node started (100Hz Mode active for 5 Servos)")
 
     def wait_for_handshake(self):
-        """Blocks until the ESP32 sends the READY signal."""
         while True:
             if self.ser.in_waiting > 0:
                 line = self.ser.readline().decode('utf-8', errors='ignore').strip()
@@ -68,15 +65,13 @@ class EspSerialBridge(Node):
     # --- 2. SERIAL PROCESSING ---
     # ==========================================================================
     def process_serial_data(self):
-        """Reads sensor data from ESP32 and publishes it to ROS"""
         while self.ser.in_waiting > 0:
             try:
                 line = self.ser.readline().decode('utf-8', errors='ignore').strip()
                 
-                # Check for format: "D0:150.2 D1:120.4 D2:60.1"
                 if "D0:" in line:
                     matches = self.sensor_pattern.findall(line)
-                    if len(matches) == 3:
+                    if len(matches) >= 3: # Kept >= 3 so it won't crash if you don't use 5 sensors
                         matches.sort(key=lambda x: int(x[0]))
                         msg = Float32MultiArray()
                         msg.data = [float(val) for _, val in matches]
@@ -86,7 +81,6 @@ class EspSerialBridge(Node):
                 self.get_logger().warn(f"Serial Parse Error: {e}")
 
     def wait_and_listen(self, duration_sec):
-        """Keeps the serial buffer clear and sends target angles at 100Hz"""
         start_time = time.time()
         last_send_time = 0
         
@@ -95,8 +89,9 @@ class EspSerialBridge(Node):
             
             # --- 100 HZ SENDING LOOP ---
             current_time = time.time()
-            if (current_time - last_send_time) >= 0.01:  # 0.01s = 100Hz
-                cmd = f"POS:{self.target_angles[0]:.2f},{self.target_angles[1]:.2f},{self.target_angles[2]:.2f}\n"
+            if (current_time - last_send_time) >= 0.01: 
+                # EXPANDED STRING FORMATTING
+                cmd = f"POS:{self.target_angles[0]:.2f},{self.target_angles[1]:.2f},{self.target_angles[2]:.2f},{self.target_angles[3]:.2f},{self.target_angles[4]:.2f}\n"
                 self.ser.write(cmd.encode('utf-8'))
                 last_send_time = current_time
                 
@@ -117,13 +112,24 @@ class EspSerialBridge(Node):
                 prev = msg.points[i-1].time_from_start
                 dt = t_abs_sec - (prev.sec + prev.nanosec * 1e-9)
             
-            if len(point.positions) < 3: continue
+            # Require at least 5 joint positions from ROS
+            if len(point.positions) < 5: continue
             
-            raw_degs = [math.degrees(p) for p in point.positions[:3]]
+            # Slice up to 5 positions
+            raw_degs = [math.degrees(p) for p in point.positions[:5]]
         
             # --- CALIBRATION FIX ---
-            OFFSET = 05.0  # <--- ADJUST THIS. Try -10.0 or +10.0
-            corrected_degs = [d + OFFSET for d in raw_degs]
+            OFFSET = 0.0
+            BEVEL1_OFFSET = 90.0  # Set your desired offset for joint 4
+            BEVEL2_OFFSET = 90.0  # Set your desired offset for joint 5
+
+            corrected_degs = [
+                raw_degs[0] + OFFSET,
+                raw_degs[1] + OFFSET,
+                raw_degs[2] + OFFSET,
+                raw_degs[3] + BEVEL1_OFFSET,
+                raw_degs[4] + BEVEL2_OFFSET,
+            ]
             
             # Constrain to min/max
             final_degs = [max(self.MIN_DEG, min(self.MAX_DEG, d)) for d in corrected_degs]
@@ -131,7 +137,6 @@ class EspSerialBridge(Node):
             # Update target for the 100Hz loop
             self.target_angles = final_degs
             
-            # Process incoming data and send out targets at 100Hz for the duration 'dt'
             self.wait_and_listen(dt)
 
 def main(args=None):
@@ -140,7 +145,6 @@ def main(args=None):
     try:
         while rclpy.ok():
             rclpy.spin_once(node, timeout_sec=0.01)
-            # Send continuous 100Hz heartbeat even when not moving
             node.wait_and_listen(0.01) 
     except KeyboardInterrupt:
         pass
