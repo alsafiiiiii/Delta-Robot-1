@@ -3,3 +3,5 @@ repo/
 servo/build/
 servo/.cache/
 velocity_pub/scripts/__pycache__/
+.ruff_cache/
+ruff.toml

@@ -36,6 +36,8 @@ install(DIRECTORY models/
 
 install(DIRECTORY meshes/
   DESTINATION share/${PROJECT_NAME}/meshes)
+install(DIRECTORY meshes2/
+  DESTINATION share/${PROJECT_NAME}/meshes2)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

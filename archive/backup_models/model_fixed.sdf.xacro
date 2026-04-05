@@ -1,0 +1,1608 @@
+<?xml version='1.0' encoding='utf-8'?>
+<sdf xmlns:xacro="http://www.ros.org/wiki/xacro" version="1.7">
+    <xacro:macro name="material_aluminium">
+        <material>
+            <ambient>0.2 0.2 0.2 1</ambient>
+            <diffuse>0.3 0.3 0.3 1</diffuse>
+            <specular>0.95 0.95 0.95 1</specular>
+        </material>
+    </xacro:macro>
+    <xacro:macro name="material_anodised_aluminium">
+        <material>
+            <ambient>0.2 0.2 0.2 1</ambient>
+            <diffuse>0.4 0.4 0.4 1</diffuse>
+            <specular>0.5 0.5 0.5 1</specular>
+        </material>
+    </xacro:macro>
+    <xacro:macro name="material_black_aluminium">
+        <material>
+            <ambient>0.05 0.05 0.05 1</ambient>
+            <diffuse>0.1 0.1 0.1 1</diffuse>
+            <specular>0.8 0.8 0.8 1</specular>
+        </material>
+    </xacro:macro>
+    <xacro:macro name="material_white_pla">
+        <material>
+            <ambient>0.3 0.3 0.3 1</ambient>
+            <diffuse>0.9 0.9 0.9 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+        </material>
+    </xacro:macro>
+    <xacro:macro name="material_grey_pla">
+        <material>
+            <ambient>0.15 0.15 0.15 1</ambient>
+            <diffuse>0.4 0.4 0.4 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+        </material>
+    </xacro:macro>
+    <xacro:macro name="material_black_pla">
+        <material>
+            <ambient>0.02 0.02 0.02 1</ambient>
+            <diffuse>0.1 0.1 0.1 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+        </material>
+    </xacro:macro>
+    <xacro:macro name="material_black_abs">
+        <material>
+            <ambient>0.05 0.05 0.05 1</ambient>
+            <diffuse>0.1 0.1 0.1 1</diffuse>
+            <specular>0.3 0.3 0.3 1</specular>
+        </material>
+    </xacro:macro>
+    <xacro:macro name="material_carbon_fiber">
+        <material>
+            <ambient>0.05 0.05 0.05 1</ambient>
+            <diffuse>0.02 0.02 0.02 1</diffuse>
+            <specular>1 1 1 1</specular>
+        </material>
+    </xacro:macro>
+    <model name="delta_robot">
+        <link name="world_link">
+            <self_collide>false</self_collide>
+            <inertial>
+                <mass value="0.01" />
+                <inertia>
+                    <ixx>1e-05</ixx>
+                    <iyy>1e-05</iyy>
+                    <izz>1e-05</izz>
+                    <ixy>0</ixy>
+                    <ixz>0</ixz>
+                    <iyz>0</iyz>
+                </inertia>
+            </inertial>
+        </link>
+        <link name="frame">
+            <self_collide>false</self_collide>
+            <static>true</static>
+            <self_collide>false</self_collide>
+            <pose>0 0 -0.059454 0 0 0</pose>
+            <inertial>
+                <pose>0 0 0 0 0 0</pose>
+                <mass>700.084375</mass>
+                <inertia>
+                    <ixx>4.0277965312</ixx>
+                    <ixy>0</ixy>
+                    <ixz>0</ixz>
+                    <iyy>4.0964840312</iyy>
+                    <iyz>0</iyz>
+                    <izz>4.6133059896</izz>
+                </inertia>
+            </inertial>
+            <collision name="Frame_collision">
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes/frame.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </collision>
+            <visual name="Frame_visual">
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes/frame.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+                <xacro:material_black_aluminium />
+            </visual>
+        </link>
+        <link name="delta_base-v1">
+            <self_collide>false</self_collide>
+            <pose>0 0 -0.01 0 0 0</pose>
+            <inertial>
+                <mass>0.3507402885</mass>
+                <pose>0 0 0.01 0 0 0</pose>
+                <inertia>
+                    <ixx>0.0001943686</ixx>
+                    <iyy>0.0001943686</iyy>
+                    <izz>0.0003653545</izz>
+                    <ixy>0</ixy>
+                    <iyz>0</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="delta_base-v1_visual">
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//delta_base-v1.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+                <xacro:material_aluminium />
+            </visual>
+        </link>
+        <link name="servo_mount_1">
+            <self_collide>false</self_collide>
+            <pose>0.043301 5.88231e-09 5.88231e-09 -1.5708 0 1.5708</pose>
+            <inertial>
+                <mass>0.0241270257</mass>
+                <pose>0.000332283 -1.10259e-05 -0.00742638 0 0 0</pose>
+                <inertia>
+                    <ixx>3.7563e-06</ixx>
+                    <iyy>6.6333e-06</iyy>
+                    <izz>6.1105e-06</izz>
+                    <ixy>-4.7e-09</ixy>
+                    <iyz>-5.1e-09</iyz>
+                    <ixz>3.691e-07</ixz>
+                </inertia>
+            </inertial>
+            <visual name="servo_mount_1_visual">
+                <pose>-0.0003 0 -0.018 0 0 0</pose><geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//servo_mount.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+                <xacro:material_black_aluminium />
+            </visual>
+        </link>
+        <link name="servo_mount_2">
+            <self_collide>false</self_collide>
+            <pose>-0.0216508 0.0374995 5.88231e-09 -1.5708 0 -2.61799</pose>
+            <inertial>
+                <mass>0.0241270257</mass>
+                <pose>0.000332283 -1.10259e-05 -0.00742638 0 0 0</pose>
+                <inertia>
+                    <ixx>3.7563e-06</ixx>
+                    <iyy>6.6333e-06</iyy>
+                    <izz>6.1105e-06</izz>
+                    <ixy>-4.7e-09</ixy>
+                    <iyz>-5.1e-09</iyz>
+                    <ixz>3.691e-07</ixz>
+                </inertia>
+            </inertial>
+            <visual name="servo_mount_2_visual">
+                <pose>-0.0003 0 -0.018 0 0 0</pose><geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//servo_mount.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+                <xacro:material_black_aluminium />
+            </visual>
+        </link>
+        <link name="servo_mount_3">
+            <self_collide>false</self_collide>
+            <pose>-0.0216502 -0.0374995 5.88231e-09 -1.5708 0 -0.523599</pose>
+            <inertial>
+                <mass>0.0241270257</mass>
+                <pose>0.000332283 -1.10259e-05 -0.00742638 0 0 0</pose>
+                <inertia>
+                    <ixx>3.7563e-06</ixx>
+                    <iyy>6.6333e-06</iyy>
+                    <izz>6.1105e-06</izz>
+                    <ixy>-4.7e-09</ixy>
+                    <iyz>-5.1e-09</iyz>
+                    <ixz>3.691e-07</ixz>
+                </inertia>
+            </inertial>
+            <visual name="servo_mount_3_visual">
+                <pose>-0.0003 0 -0.018 0 0 0</pose><geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//servo_mount.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+                <xacro:material_black_aluminium />
+            </visual>
+        </link>
+        <link name="servo_1">
+            <self_collide>false</self_collide>
+            <pose>0.098601 -0.00995 -0.013 0 0 0</pose>
+            <inertial>
+                <mass>0.2665419134</mass>
+                <pose>-0.0292907 0.0100195 0.013 0 0 0</pose>
+                <inertia>
+                    <ixx>3.47326e-05</ixx>
+                    <iyy>5.71427e-05</iyy>
+                    <izz>6.56729e-05</izz>
+                    <ixy>-2.3e-07</ixy>
+                    <iyz>0</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="servo_1">
+                <pose>-0.016 0.01025 0.013 0 0 0</pose><geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes/servo.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+                <xacro:material_black_abs />
+            </visual>
+        </link>
+        <link name="servo_2">
+            <self_collide>false</self_collide>
+            <pose>-0.0406832 0.0903664 -0.013 0 0 2.0944</pose>
+            <inertial>
+                <mass>0.2665419134</mass>
+                <pose>-0.0292907 0.0100195 0.013 0 0 0</pose>
+                <inertia>
+                    <ixx>3.47326e-05</ixx>
+                    <iyy>5.71427e-05</iyy>
+                    <izz>6.56729e-05</izz>
+                    <ixy>-2.3e-07</ixy>
+                    <iyz>0</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="servo_2">
+                <pose>-0.016 0.01025 0.013 0 0 0</pose><geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes/servo.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+                <xacro:material_black_abs />
+            </visual>
+        </link>
+        <link name="servo_3">
+            <self_collide>false</self_collide>
+            <pose>-0.0579178 -0.0804164 -0.013 0 0 -2.09439</pose>
+            <inertial>
+                <mass>0.2665419134</mass>
+                <pose>-0.0292907 0.0100195 0.013 0 0 0</pose>
+                <inertia>
+                    <ixx>3.47326e-05</ixx>
+                    <iyy>5.71427e-05</iyy>
+                    <izz>6.56729e-05</izz>
+                    <ixy>-2.3e-07</ixy>
+                    <iyz>0</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="servo_3">
+                <pose>-0.016 0.01025 0.013 0 0 0</pose><geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes/servo.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+                <xacro:material_black_abs />
+            </visual>
+        </link>
+        <link name="servo_1_horn">
+            <self_collide>false</self_collide>
+            <pose>0.082601 0.0142 0 0 0 0</pose>
+            <inertial>
+                <mass>0.0063187985</mass>
+                <pose>-2.7011e-06 0.00300658 2.7463e-06 0 0 0</pose>
+                <inertia>
+                    <ixx>1.378e-07</ixx>
+                    <iyy>2.59e-07</iyy>
+                    <izz>1.378e-07</izz>
+                    <ixy>0</ixy>
+                    <iyz>0</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="servo_1_horn_visual">
+                <pose>-0.012499 -0.0145 0 0 0 0</pose><geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//servo_horn.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+                <xacro:material_anodised_aluminium />
+            </visual>
+        </link>
+        <link name="bicep1">
+            <self_collide>false</self_collide>
+            <pose>0.095101 0.0192 0 0 0 -1.5708</pose>
+            <inertial>
+                <mass>0.0299135472</mass>
+                <pose>0.0192 0.034737 -0.000404853 0 0 0</pose>
+                <inertia>
+                    <ixx>3.23451e-05</ixx>
+                    <iyy>5.9246e-06</iyy>
+                    <izz>3.55198e-05</izz>
+                    <ixy>0</ixy>
+                    <iyz>-2.856e-07</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="bicep1_visual">
+                <pose>0.0192 -0.0125 0 0 0 0</pose><geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//bicep.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+                <xacro:material_white_pla />
+            </visual>
+        </link>
+        <link name="servo_2_horn">
+            <self_collide>false</self_collide>
+            <pose>-0.0535984 0.0644353 0 0 0 2.0944</pose>
+            <inertial>
+                <mass>0.0063187985</mass>
+                <pose>-3.7011e-06 0.00300658 2.7463e-06 0 0 0</pose>
+                <inertia>
+                    <ixx>1.378e-07</ixx>
+                    <iyy>2.59e-07</iyy>
+                    <izz>1.378e-07</izz>
+                    <ixy>0</ixy>
+                    <iyz>0</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="servo_2_horn_visual">
+                <pose>-0.0125 -0.0145 0 0 0 0</pose><geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//servo_horn.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+                <xacro:material_anodised_aluminium />
+            </visual>
+        </link>
+        <link name="bicep2">
+            <self_collide>false</self_collide>
+            <pose>-0.0641787 0.0727603 0 0 0 0.523599</pose>
+            <inertial>
+                <mass>0.0299135472</mass>
+                <pose>0.0192 0.034737 -0.000404853 0 0 0</pose>
+                <inertia>
+                    <ixx>3.23451e-05</ixx>
+                    <iyy>5.9246e-06</iyy>
+                    <izz>3.55198e-05</izz>
+                    <ixy>0</ixy>
+                    <iyz>-2.856e-07</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="bicep2_visual">
+                <pose>0.0192 -0.0125 0 0 0 0</pose><geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//bicep.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+                <xacro:material_white_pla />
+            </visual>
+        </link>
+        <link name="servo_3_horn">
+            <self_collide>false</self_collide>
+            <pose>-0.0290036 -0.0786353 0 0 0 -2.09439</pose>
+            <inertial>
+                <mass>0.0063187985</mass>
+                <pose>-3.7011e-06 0.00300658 2.7463e-06 0 0 0</pose>
+                <inertia>
+                    <ixx>1.378e-07</ixx>
+                    <iyy>2.59e-07</iyy>
+                    <izz>1.378e-07</izz>
+                    <ixy>0</ixy>
+                    <iyz>0</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="servo_3_horn_visual">
+                <pose>-0.0125 -0.0145 0 0 0 0</pose><geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//servo_horn.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+                <xacro:material_anodised_aluminium />
+            </visual>
+        </link>
+        <link name="bicep3">
+            <self_collide>false</self_collide>
+            <pose>-0.0309233 -0.0919603 0 0 0 2.61799</pose>
+            <inertial>
+                <mass>0.0299135472</mass>
+                <pose>0.0192 0.034737 -0.000404853 0 0 0</pose>
+                <inertia>
+                    <ixx>3.23451e-05</ixx>
+                    <iyy>5.9246e-06</iyy>
+                    <izz>3.55198e-05</izz>
+                    <ixy>0</ixy>
+                    <iyz>-2.856e-07</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="bicep3_visual">
+                <pose>0.0192 -0.0125 0 0 0 0</pose><geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//bicep.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+                <xacro:material_white_pla />
+            </visual>
+        </link>
+        <link name="pivot_arm_1">
+            <self_collide>false</self_collide>
+            <pose>0.182601 0.006 -8.6424e-10 -1.5708 0.848448 1.11022e-16</pose>
+            <inertial>
+                <mass>0.0390860375</mass>
+                <pose>0 0 -0.00562255 0 0 0</pose>
+                <inertia>
+                    <ixx>1.09743e-05</ixx>
+                    <iyy>1.2263e-05</iyy>
+                    <izz>1.9206e-06</izz>
+                    <ixy>0</ixy>
+                    <iyz>0</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="pivot_arm_1_visual">
+                <pose>0 0 0.004 0 0 0</pose><geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//pivot_arm.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+                <xacro:material_grey_pla />
+            </visual>
+        </link>
+        <link name="pivot_arm_2">
+            <self_collide>false</self_collide>
+            <pose>-0.0964969 0.155137 -8.6424e-10 -1.5708 0.848448 2.0944</pose>
+            <inertial>
+                <mass>0.0390860375</mass>
+                <pose>0 0 -0.00562255 0 0 0</pose>
+                <inertia>
+                    <ixx>1.09743e-05</ixx>
+                    <iyy>1.2263e-05</iyy>
+                    <izz>1.9206e-06</izz>
+                    <ixy>0</ixy>
+                    <iyz>0</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="pivot_arm_2_visual">
+                <pose>0 0 0.004 0 0 0</pose><geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//pivot_arm.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+                <xacro:material_grey_pla />
+            </visual>
+        </link>
+        <link name="pivot_arm_3">
+            <self_collide>false</self_collide>
+            <pose>-0.0861041 -0.161137 -8.6424e-10 -1.5708 0.848448 -2.0944</pose>
+            <inertial>
+                <mass>0.0390860375</mass>
+                <pose>0 0 -0.00562255 0 0 0</pose>
+                <inertia>
+                    <ixx>1.09743e-05</ixx>
+                    <iyy>1.2263e-05</iyy>
+                    <izz>1.9206e-06</izz>
+                    <ixy>0</ixy>
+                    <iyz>0</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="pivot_arm_3_visual">
+                <pose>0 0 0.004 0 0 0</pose><geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//pivot_arm.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+                <xacro:material_grey_pla />
+            </visual>
+        </link>
+        <link name="rod_cap_1">
+            <self_collide>false</self_collide>
+            <pose>0.18875 -0.026 -0.006977 2.419244 0 1.570795</pose>
+            <inertial>
+                <mass>0.0225389015</mass>
+                <pose>3.6e-08 -0.0043487373 -0.0088260621 0 0 0</pose>
+                <inertia>
+                    <ixx>1.3755e-06</ixx>
+                    <iyy>9.166e-07</iyy>
+                    <izz>9.897e-07</izz>
+                    <ixy>0</ixy>
+                    <iyz>-4.64e-08</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="rod_cap_1_visual">
+                <xacro:material_black_pla />
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//rod_cap.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </visual>
+        </link>
+        <link name="rod_cap_2">
+            <self_collide>false</self_collide>
+            <pose>0.18875 0.026 -0.006977 2.419244 0 1.570795</pose>
+            <inertial>
+                <mass>0.0225389015</mass>
+                <pose>3.6e-08 -0.0043487373 -0.0088260621 0 0 0</pose>
+                <inertia>
+                    <ixx>1.3755e-06</ixx>
+                    <iyy>9.166e-07</iyy>
+                    <izz>9.897e-07</izz>
+                    <ixy>0</ixy>
+                    <iyz>-4.64e-08</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="rod_cap_2_visual">
+                <xacro:material_black_pla />
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//rod_cap.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </visual>
+        </link>
+        <link name="rod_cap_3">
+            <self_collide>false</self_collide>
+            <pose>-0.071858 0.176462 -0.006977 2.419244 0 -2.617995</pose>
+            <inertial>
+                <mass>0.0225389015</mass>
+                <pose>3.6e-08 -0.0043487373 -0.0088260621 0 0 0</pose>
+                <inertia>
+                    <ixx>1.3755e-06</ixx>
+                    <iyy>9.166e-07</iyy>
+                    <izz>9.897e-07</izz>
+                    <ixy>0</ixy>
+                    <iyz>-4.64e-08</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="rod_cap_3_visual">
+                <xacro:material_black_pla />
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//rod_cap.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </visual>
+        </link>
+        <link name="rod_cap_4">
+            <self_collide>false</self_collide>
+            <pose>-0.116892 0.150462 -0.006977 2.419244 0 -2.617995</pose>
+            <inertial>
+                <mass>0.0225389015</mass>
+                <pose>3.6e-08 -0.0043487373 -0.0088260621 0 0 0</pose>
+                <inertia>
+                    <ixx>1.3755e-06</ixx>
+                    <iyy>9.166e-07</iyy>
+                    <izz>9.897e-07</izz>
+                    <ixy>0</ixy>
+                    <iyz>-4.64e-08</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="rod_cap_4_visual">
+                <xacro:material_black_pla />
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//rod_cap.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </visual>
+        </link>
+        <link name="rod_cap_5">
+            <self_collide>false</self_collide>
+            <pose>-0.116892 -0.150462 -0.006977 2.419244 0 -0.5236</pose>
+            <inertial>
+                <mass>0.0225389015</mass>
+                <pose>3.6e-08 -0.0043487373 -0.0088260621 0 0 0</pose>
+                <inertia>
+                    <ixx>1.3755e-06</ixx>
+                    <iyy>9.166e-07</iyy>
+                    <izz>9.897e-07</izz>
+                    <ixy>0</ixy>
+                    <iyz>-4.64e-08</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="rod_cap_5_visual">
+                <xacro:material_black_pla />
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//rod_cap.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </visual>
+        </link>
+        <link name="rod_cap_6">
+            <self_collide>false</self_collide>
+            <pose>-0.071858 -0.176462 -0.006977 2.419244 0 -0.5236</pose>
+            <inertial>
+                <mass>0.0225389015</mass>
+                <pose>3.6e-08 -0.0043487373 -0.0088260621 0 0 0</pose>
+                <inertia>
+                    <ixx>1.3755e-06</ixx>
+                    <iyy>9.166e-07</iyy>
+                    <izz>9.897e-07</izz>
+                    <ixy>0</ixy>
+                    <iyz>-4.64e-08</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="rod_cap_6_visual">
+                <xacro:material_black_pla />
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//rod_cap.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </visual>
+        </link>
+        <link name="forearm_1">
+            <self_collide>false</self_collide>
+            <pose>0.17885 -0.026 -0.00330552 0 0.848448 0</pose>
+            <inertial>
+                <mass>0.0405706145</mass>
+                <pose>0 0 -0.0950335 0 0 0</pose>
+                <inertia>
+                    <ixx>0.0001222238</ixx>
+                    <iyy>0.0001222238</iyy>
+                    <izz>1.756e-07</izz>
+                    <ixy>0</ixy>
+                    <iyz>0</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="forearm_1_visual">
+                <pose>0 0 -0.190067 0 0 0</pose><xacro:material_carbon_fiber />
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//forearm_1.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </visual>
+        </link>
+        <link name="forearm_2">
+            <self_collide>false</self_collide>
+            <pose>0.17885 0.026 -0.00330552 0 0.848448 0</pose>
+            <inertial>
+                <mass>0.0405706145</mass>
+                <pose>0 0 -0.0950335 0 0 0</pose>
+                <inertia>
+                    <ixx>0.0001222238</ixx>
+                    <iyy>0.0001222238</iyy>
+                    <izz>1.756e-07</izz>
+                    <ixy>0</ixy>
+                    <iyz>0</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="forearm_2_visual">
+                <pose>0 0 -0.190067 0 0 0</pose><xacro:material_carbon_fiber />
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//forearm_2.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </visual>
+        </link>
+        <link name="forearm_3">
+            <self_collide>false</self_collide>
+            <pose>-0.0669084 0.167888 -0.00330552 -2.22045e-16 0.848448 2.09439</pose>
+            <inertial>
+                <mass>0.0405706145</mass>
+                <pose>0 0 -0.0950335 0 0 0</pose>
+                <inertia>
+                    <ixx>0.0001222238</ixx>
+                    <iyy>0.0001222238</iyy>
+                    <izz>1.756e-07</izz>
+                    <ixy>0</ixy>
+                    <iyz>0</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="forearm_3_visual">
+                <pose>0 0 -0.190067 0 0 0</pose><xacro:material_carbon_fiber />
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//forearm_3.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </visual>
+        </link>
+        <link name="forearm_4">
+            <self_collide>false</self_collide>
+            <pose>-0.111941 0.141888 -0.00330552 -2.22045e-16 0.848448 2.09439</pose>
+            <inertial>
+                <mass>0.0405706145</mass>
+                <pose>0 0 -0.0950335 0 0 0</pose>
+                <inertia>
+                    <ixx>0.0001222238</ixx>
+                    <iyy>0.0001222238</iyy>
+                    <izz>1.756e-07</izz>
+                    <ixy>0</ixy>
+                    <iyz>0</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="forearm_4_visual">
+                <pose>0 0 -0.190067 0 0 0</pose><xacro:material_carbon_fiber />
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//forearm_4.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </visual>
+        </link>
+        <link name="forearm_5">
+            <self_collide>false</self_collide>
+            <pose>-0.111941 -0.141889 -0.00330552 0 0.848448 -2.09439</pose>
+            <inertial>
+                <mass>0.0405706145</mass>
+                <pose>0 0 -0.0950335 0 0 0</pose>
+                <inertia>
+                    <ixx>0.0001222238</ixx>
+                    <iyy>0.0001222238</iyy>
+                    <izz>1.756e-07</izz>
+                    <ixy>0</ixy>
+                    <iyz>0</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="forearm_5_visual">
+                <pose>0 0 -0.190067 0 0 0</pose><xacro:material_carbon_fiber />
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//forearm_5.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </visual>
+        </link>
+        <link name="forearm_6">
+            <self_collide>false</self_collide>
+            <pose>-0.0669084 -0.167889 -0.00330552 0 0.848448 -2.09439</pose>
+            <inertial>
+                <mass>0.0405706145</mass>
+                <pose>0 0 -0.0950335 0 0 0</pose>
+                <inertia>
+                    <ixx>0.0001222238</ixx>
+                    <iyy>0.0001222238</iyy>
+                    <izz>1.756e-07</izz>
+                    <ixy>0</ixy>
+                    <iyz>0</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="forearm_6_visual">
+                <pose>0 0 -0.190067 0 0 0</pose><xacro:material_carbon_fiber />
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//forearm_6.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </visual>
+        </link>
+        <link name="rod_cap_7">
+            <self_collide>false</self_collide>
+            <pose>0.036251 -0.026 -0.128968 1.570797 0.848448 0</pose>
+            <inertial>
+                <mass>0.022829726</mass>
+                <pose>0.000473902 -0.0006512435 3.6e-08 0 0 0</pose>
+                <inertia>
+                    <ixx>1.0025e-06</ixx>
+                    <iyy>9.284e-07</iyy>
+                    <izz>1.3932e-06</izz>
+                    <ixy>4.7e-08</ixy>
+                    <iyz>0</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="rod_cap_7_visual">
+                <xacro:material_black_pla />
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//rod_cap_2.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </visual>
+        </link>
+        <link name="rod_cap_8">
+            <self_collide>false</self_collide>
+            <pose>0.036251 0.026 -0.128968 1.570797 0.848448 0</pose>
+            <inertial>
+                <mass>0.022829726</mass>
+                <pose>0.000473902 -0.0006512435 3.6e-08 0 0 0</pose>
+                <inertia>
+                    <ixx>1.0025e-06</ixx>
+                    <iyy>9.284e-07</iyy>
+                    <izz>1.3932e-06</izz>
+                    <ixy>4.7e-08</ixy>
+                    <iyz>0</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="rod_cap_8_visual">
+                <xacro:material_black_pla />
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//rod_cap_2.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </visual>
+        </link>
+        <link name="rod_cap_9">
+            <self_collide>false</self_collide>
+            <pose>0.004391 0.044394 -0.128968 1.570797 0.848448 2.094395</pose>
+            <inertial>
+                <mass>0.022829726</mass>
+                <pose>0.000473902 -0.0006512435 3.6e-08 0 0 0</pose>
+                <inertia>
+                    <ixx>1.0025e-06</ixx>
+                    <iyy>9.284e-07</iyy>
+                    <izz>1.3932e-06</izz>
+                    <ixy>4.7e-08</ixy>
+                    <iyz>0</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="rod_cap_9_visual">
+                <xacro:material_black_pla />
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//rod_cap_2.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </visual>
+        </link>
+        <link name="rod_cap_10">
+            <self_collide>false</self_collide>
+            <pose>-0.040642 0.018394 -0.128968 1.570797 0.848448 2.094395</pose>
+            <inertial>
+                <mass>0.022829726</mass>
+                <pose>0.000473902 -0.0006512435 3.6e-08 0 0 0</pose>
+                <inertia>
+                    <ixx>1.0025e-06</ixx>
+                    <iyy>9.284e-07</iyy>
+                    <izz>1.3932e-06</izz>
+                    <ixy>4.7e-08</ixy>
+                    <iyz>0</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="rod_cap_10_visual">
+                <xacro:material_black_pla />
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//rod_cap_2.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </visual>
+        </link>
+        <link name="rod_cap_11">
+            <self_collide>false</self_collide>
+            <pose>-0.040642 -0.018395 -0.128968 1.570797 0.848448 -2.094395</pose>
+            <inertial>
+                <mass>0.022829726</mass>
+                <pose>0.000473902 -0.0006512435 3.6e-08 0 0 0</pose>
+                <inertia>
+                    <ixx>1.0025e-06</ixx>
+                    <iyy>9.284e-07</iyy>
+                    <izz>1.3932e-06</izz>
+                    <ixy>4.7e-08</ixy>
+                    <iyz>0</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="rod_cap_11_visual">
+                <xacro:material_black_pla />
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//rod_cap_2.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </visual>
+        </link>
+        <link name="rod_cap_12">
+            <self_collide>false</self_collide>
+            <pose>0.004391 -0.044395 -0.128968 1.570797 0.848448 -2.094395</pose>
+            <inertial>
+                <mass>0.022829726</mass>
+                <pose>0.000473902 -0.0006512435 3.6e-08 0 0 0</pose>
+                <inertia>
+                    <ixx>1.0025e-06</ixx>
+                    <iyy>9.284e-07</iyy>
+                    <izz>1.3932e-06</izz>
+                    <ixy>4.7e-08</ixy>
+                    <iyz>0</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="rod_cap_12_visual">
+                <xacro:material_black_pla />
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//rod_cap_2.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </visual>
+        </link>
+        <link name="pivot_arm_4">
+            <self_collide>false</self_collide>
+            <pose>0.0386487 -0.026 -0.139251 -1.5708 -0.848448 -3.14159</pose>
+            <inertial>
+                <mass>0.0390860375</mass>
+                <pose>0.0093 0 -0.0256226 0 0 0</pose>
+                <inertia>
+                    <ixx>1.09743e-05</ixx>
+                    <iyy>1.2263e-05</iyy>
+                    <izz>1.9206e-06</izz>
+                    <ixy>0</ixy>
+                    <iyz>0</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="pivot_arm_4_visual">
+                <pose>0.0093 0 -0.016 0 0 0</pose><xacro:material_grey_pla />
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//pivot_arm.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </visual>
+        </link>
+        <link name="pivot_arm_5">
+            <self_collide>false</self_collide>
+            <pose>0.00319207 0.0464709 -0.139251 -1.5708 -0.848448 -1.0472</pose>
+            <inertial>
+                <mass>0.0390860375</mass>
+                <pose>0.0093 0 -0.0256226 0 0 0</pose>
+                <inertia>
+                    <ixx>1.09743e-05</ixx>
+                    <iyy>1.2263e-05</iyy>
+                    <izz>1.9206e-06</izz>
+                    <ixy>0</ixy>
+                    <iyz>0</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="pivot_arm_5_visual">
+                <pose>0.0093 0 -0.016 0 0 0</pose><xacro:material_grey_pla />
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//pivot_arm.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </visual>
+        </link>
+        <link name="pivot_arm_6">
+            <self_collide>false</self_collide>
+            <pose>-0.0418407 -0.0204709 -0.139251 -1.5708 -0.848448 1.0472</pose>
+            <inertial>
+                <mass>0.0390860375</mass>
+                <pose>0.0093 0 -0.0256226 0 0 0</pose>
+                <inertia>
+                    <ixx>1.09743e-05</ixx>
+                    <iyy>1.2263e-05</iyy>
+                    <izz>1.9206e-06</izz>
+                    <ixy>0</ixy>
+                    <iyz>0</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="pivot_arm_6_visual">
+                <pose>0.0093 0 -0.016 0 0 0</pose><xacro:material_grey_pla />
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//pivot_arm.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </visual>
+        </link>
+        <link name="end_effector">
+            <self_collide>false</self_collide>
+            <pose>0 0 -0.132274 -1.570796 0 0.523599</pose>
+            <inertial>
+                <mass>0.3630684398</mass>
+                <pose>0 0 0 0 0 0</pose>
+                <inertia>
+                    <ixx>9.77541e-05</ixx>
+                    <iyy>0.0001606476</iyy>
+                    <izz>9.77541e-05</izz>
+                    <ixy>0</ixy>
+                    <iyz>0</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="end_effector_visual">
+                <xacro:material_black_pla />
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//end_effector.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </visual>
+        </link>
+        <link name="differential_c_arm">
+            <self_collide>false</self_collide>
+            <pose>2.15035e-08 -1.05839e-08 -0.144774 3.14159 2.22045e-16 -1.5708</pose>
+            <inertial>
+                <mass>0.0546277939</mass>
+                <pose>0 4.999e-07 0.00560002 0 0 0</pose>
+                <inertia>
+                    <ixx>2.97964e-05</ixx>
+                    <iyy>2.7248e-06</iyy>
+                    <izz>2.91283e-05</izz>
+                    <ixy>0</ixy>
+                    <iyz>0</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="differential_c_arm_visual">
+                <pose>-0.0075 -0.032387 0.055 0 0 0</pose><xacro:material_grey_pla />
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//differential_c_arm.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </visual>
+        </link>
+        <link name="bevel_pinion_1">
+            <self_collide>false</self_collide>
+            <pose>0.027387 2.61436e-09 -0.159774 3.14159 2.22045e-16 -1.5708</pose>
+            <inertial>
+                <mass>0.0190930454</mass>
+                <pose>-2.927e-07 0.00660778 2.94e-07 0 0 0</pose>
+                <inertia>
+                    <ixx>6.426e-07</ixx>
+                    <iyy>7.99e-07</iyy>
+                    <izz>6.426e-07</izz>
+                    <ixy>0</ixy>
+                    <iyz>0</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="bevel_pinion_1_visual">
+                <pose>0 0.008 0 0 0 0</pose><xacro:material_black_pla />
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//bevel_pinion.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </visual>
+        </link>
+        <link name="bevel_pinion_2">
+            <self_collide>false</self_collide>
+            <pose>-0.027388 -2.61436e-09 -0.159774 -1.5708 -1.5708 -3.52813e-10</pose>
+            <inertial>
+                <mass>0.0190930454</mass>
+                <pose>-2.927e-07 0.00660778 2.94e-07 0 0 0</pose>
+                <inertia>
+                    <ixx>6.426e-07</ixx>
+                    <iyy>7.99e-07</iyy>
+                    <izz>6.426e-07</izz>
+                    <ixy>0</ixy>
+                    <iyz>0</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="bevel_pinion_2_visual">
+                <pose>0 0.008 0 0 0 0</pose><xacro:material_black_pla />
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//bevel_pinion.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </visual>
+        </link>
+        <link name="differentialT">
+            <self_collide>false</self_collide>
+            <pose>0.027387 -2.73423e-07 -0.159774 3.06838 0 0</pose>
+            <inertial>
+                <mass>0.0162534729</mass>
+                <pose>-0.0273872 1.64327e-05 0.00296495 0 0 0</pose>
+                <inertia>
+                    <ixx>6.051e-07</ixx>
+                    <iyy>3.6171e-06</iyy>
+                    <izz>3.0857e-06</izz>
+                    <ixy>0</ixy>
+                    <iyz>-2.2e-09</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="differentialT_visual">
+                <pose>-0.054775 -0.06 0 0 0 0</pose><xacro:material_grey_pla />
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//differentialT.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </visual>
+        </link>
+        <link name="bevel_gear_ee">
+            <self_collide>false</self_collide>
+            <pose>-5.98976e-10 -0.00159704 -0.180713 1.6379 -0.029294 -2.7306</pose>
+            <inertial>
+                <mass>0.0619505392</mass>
+                <pose>0.000111662 0.00634985 0 0 0 0</pose>
+                <inertia>
+                    <ixx>5.595e-06</ixx>
+                    <iyy>9.2871e-06</iyy>
+                    <izz>5.5334e-06</izz>
+                    <ixy>2.66e-08</ixy>
+                    <iyz>0</iyz>
+                    <ixz>0</ixz>
+                </inertia>
+            </inertial>
+            <visual name="bevel_gear_ee_visual">
+                <pose>0 0.0105 0 0 0 0</pose><xacro:material_black_pla />
+                <geometry>
+                    <mesh>
+                        <uri>package://delta_robot_description/meshes//bevel_gear_ee.stl</uri>
+                        <scale>0.001 0.001 0.001</scale>
+                    </mesh>
+                </geometry>
+            </visual>
+        </link>
+        
+        
+        <joint name="joint_world_to_frame" type="fixed">
+            <parent>world_link</parent>
+            <child>frame</child>
+        </joint>
+        <joint name="joint_frame_to_base" type="fixed">
+            <parent>frame</parent>
+            <child>delta_base-v1</child>
+        </joint>
+        <joint name="delta_base_to_servo_mount_1" type="fixed">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>delta_base-v1</parent>
+            <child>servo_mount_1</child>
+        </joint>
+        <joint name="delta_base_to_servo_mount_2" type="fixed">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>delta_base-v1</parent>
+            <child>servo_mount_2</child>
+        </joint>
+        <joint name="delta_base_to_servo_mount_3" type="fixed">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>delta_base-v1</parent>
+            <child>servo_mount_3</child>
+        </joint>
+        <joint name="servo_mount_1_to_servo_1" type="fixed">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>servo_mount_1</parent>
+            <child>servo_1</child>
+        </joint>
+        <joint name="servo_mount_2_to_servo_2" type="fixed">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>servo_mount_2</parent>
+            <child>servo_2</child>
+        </joint>
+        <joint name="servo_mount_3_to_servo_3" type="fixed">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>servo_mount_3</parent>
+            <child>servo_3</child>
+        </joint>
+        <joint name="motor_joint_1" type="revolute">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>servo_1</parent>
+            <child>servo_1_horn</child>
+            <axis>
+                <xyz>0 1 0</xyz>
+            </axis>
+        </joint>
+        <joint name="motor_joint_2" type="revolute">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>servo_2</parent>
+            <child>servo_2_horn</child>
+            <axis>
+                <xyz>0 1 0</xyz>
+            </axis>
+        </joint>
+        <joint name="motor_joint_3" type="revolute">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>servo_3</parent>
+            <child>servo_3_horn</child>
+            <axis>
+                <xyz>0 1 0</xyz>
+            </axis>
+        </joint>
+        <joint name="servo_1_horn_to_bicep1" type="fixed">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>servo_1_horn</parent>
+            <child>bicep1</child>
+        </joint>
+        <joint name="servo_2_horn_to_bicep2" type="fixed">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>servo_2_horn</parent>
+            <child>bicep2</child>
+        </joint>
+        <joint name="servo_3_horn_to_bicep3" type="fixed">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>servo_3_horn</parent>
+            <child>bicep3</child>
+        </joint>
+        <joint name="bicep_1_to_pivot_arm_1" type="revolute">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>bicep1</parent>
+            <child>pivot_arm_1</child>
+            <axis>
+                <xyz>0 0 1</xyz>
+            </axis>
+        </joint>
+        <joint name="bicep_2_to_pivot_arm_2" type="revolute">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>bicep2</parent>
+            <child>pivot_arm_2</child>
+            <axis>
+                <xyz>0 0 1</xyz>
+            </axis>
+        </joint>
+        <joint name="bicep_3_to_pivot_arm_3" type="revolute">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>bicep3</parent>
+            <child>pivot_arm_3</child>
+            <axis>
+                <xyz>0 0 1</xyz>
+            </axis>
+        </joint>
+        <joint name="pivot_arm_1_to_rod_cap_1" type="revolute">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>pivot_arm_1</parent>
+            <child>rod_cap_1</child>
+            <axis>
+                <xyz>0 0 1</xyz>
+            </axis>
+        </joint>
+        <joint name="pivot_arm_1_to_rod_cap_2" type="revolute">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>pivot_arm_1</parent>
+            <child>rod_cap_2</child>
+            <axis>
+                <xyz>0 0 1</xyz>
+            </axis>
+        </joint>
+        <joint name="pivot_arm_2_to_rod_cap_3" type="revolute">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>pivot_arm_2</parent>
+            <child>rod_cap_3</child>
+            <axis>
+                <xyz>0 0 1</xyz>
+            </axis>
+        </joint>
+        <joint name="pivot_arm_2_to_rod_cap_4" type="revolute">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>pivot_arm_2</parent>
+            <child>rod_cap_4</child>
+            <axis>
+                <xyz>0 0 1</xyz>
+            </axis>
+        </joint>
+        <joint name="pivot_arm_3_to_rod_cap_5" type="revolute">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>pivot_arm_3</parent>
+            <child>rod_cap_5</child>
+            <axis>
+                <xyz>0 0 1</xyz>
+            </axis>
+        </joint>
+        <joint name="pivot_arm_3_to_rod_cap_6" type="revolute">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>pivot_arm_3</parent>
+            <child>rod_cap_6</child>
+            <axis>
+                <xyz>0 0 1</xyz>
+            </axis>
+        </joint>
+        <joint name="rod_cap_1_Rigid-17" type="fixed">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>rod_cap_1</parent>
+            <child>forearm_1</child>
+        </joint>
+        <joint name="rod_cap_2_Rigid-16" type="fixed">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>rod_cap_2</parent>
+            <child>forearm_2</child>
+        </joint>
+        <joint name="rod_cap_3_Rigid-21" type="fixed">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>rod_cap_3</parent>
+            <child>forearm_3</child>
+        </joint>
+        <joint name="rod_cap_4_Rigid-20" type="fixed">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>rod_cap_4</parent>
+            <child>forearm_4</child>
+        </joint>
+        <joint name="rod_cap_5_Rigid-19" type="fixed">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>rod_cap_5</parent>
+            <child>forearm_5</child>
+        </joint>
+        <joint name="rod_cap_6_Rigid-18" type="fixed">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>rod_cap_6</parent>
+            <child>forearm_6</child>
+        </joint>
+        <joint name="forearm_1_Rigid-42" type="fixed">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>forearm_1</parent>
+            <child>rod_cap_7</child>
+        </joint>
+        <joint name="forearm_2_Rigid-43" type="fixed">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>forearm_2</parent>
+            <child>rod_cap_8</child>
+        </joint>
+        <joint name="forearm_3_Rigid-44" type="fixed">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>forearm_3</parent>
+            <child>rod_cap_9</child>
+        </joint>
+        <joint name="forearm_4_Rigid-45" type="fixed">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>forearm_4</parent>
+            <child>rod_cap_10</child>
+        </joint>
+        <joint name="forearm_5_Rigid-46" type="fixed">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>forearm_5</parent>
+            <child>rod_cap_11</child>
+        </joint>
+        <joint name="forearm_6_Rigid-47" type="fixed">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>forearm_6</parent>
+            <child>rod_cap_12</child>
+        </joint>
+        <joint name="rod_cap_7_to_pivot_arm_4" type="revolute">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>rod_cap_7</parent>
+            <child>pivot_arm_4</child>
+            <axis>
+                <xyz>1 0 0</xyz>
+            </axis>
+        </joint>
+        <link name="rod_cap_8_1">
+            <self_collide>false</self_collide>
+            <pose relative_to="rod_cap_8">0.0093 -0.005 0 0 0 3.14159</pose>
+        </link>
+        <joint name="rod_cap_8_to_pivot_arm_4" type="revolute">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>rod_cap_8</parent>
+            <child>rod_cap_8_1</child>
+            <axis>
+                <xyz>1 0 0</xyz>
+            </axis>
+        </joint>
+        <plugin filename="libgz-sim-detachable-joint-system.so" name="gz::sim::systems::DetachableJoint">
+            <parent_link>rod_cap_8_1</parent_link>
+            <child_model>delta_robot</child_model>
+            <child_link>pivot_arm_4</child_link>
+        </plugin>
+        <joint name="rod_cap_9_to_pivot_arm_5" type="revolute">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>rod_cap_9</parent>
+            <child>pivot_arm_5</child>
+            <axis>
+                <xyz>1 0 0</xyz>
+            </axis>
+        </joint>
+        <link name="rod_cap_10_1">
+            <self_collide>false</self_collide>
+            <pose relative_to="rod_cap_10">0.0093 -0.005 0 0 0 3.14159</pose>
+        </link>
+        <joint name="rod_cap_10_to_pivot_arm_5" type="revolute">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>rod_cap_10</parent>
+            <child>rod_cap_10_1</child>
+            <axis>
+                <xyz>1 0 0</xyz>
+            </axis>
+        </joint>
+        <plugin filename="libgz-sim-detachable-joint-system.so" name="gz::sim::systems::DetachableJoint">
+            <parent_link>rod_cap_10_1</parent_link>
+            <child_model>delta_robot</child_model>
+            <child_link>pivot_arm_5</child_link>
+        </plugin>
+        <joint name="rod_cap_11_to_pivot_arm_6" type="revolute">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>rod_cap_11</parent>
+            <child>pivot_arm_6</child>
+            <axis>
+                <xyz>1 0 0</xyz>
+            </axis>
+        </joint>
+        <link name="rod_cap_12_1">
+            <self_collide>false</self_collide>
+            <pose relative_to="rod_cap_12">0.0093 -0.005 0 0 0 3.14159</pose>
+        </link>
+        <joint name="rod_cap_12_to_pivot_arm_6" type="revolute">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>rod_cap_12</parent>
+            <child>rod_cap_12_1</child>
+            <axis>
+                <xyz>1 0 0</xyz>
+            </axis>
+        </joint>
+        <plugin filename="libgz-sim-detachable-joint-system.so" name="gz::sim::systems::DetachableJoint">
+            <parent_link>rod_cap_12_1</parent_link>
+            <child_model>delta_robot</child_model>
+            <child_link>pivot_arm_6</child_link>
+        </plugin>
+        <link name="virtual_pivot_1">
+            <self_collide>false</self_collide>
+            <pose relative_to="pivot_arm_4">0 0 -0.01 0 0 0</pose>
+        </link>
+        <link name="virtual_pivot_2">
+            <self_collide>false</self_collide>
+            <pose relative_to="pivot_arm_5">0 0 -0.01 0 0 0</pose>
+        </link>
+        <link name="virtual_pivot_3">
+            <self_collide>false</self_collide>
+            <pose relative_to="pivot_arm_6">0 0 -0.01 0 0 0</pose>
+        </link>
+        <joint name="pivot_joint_4_to_virtual_pivot_1" type="revolute">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>pivot_arm_4</parent>
+            <child>virtual_pivot_1</child>
+            <axis>
+                <xyz>0 0 1</xyz>
+            </axis>
+        </joint>
+        <joint name="pivot_joint_5_to_virtual_pivot_2" type="revolute">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>pivot_arm_5</parent>
+            <child>virtual_pivot_2</child>
+            <axis>
+                <xyz>0 0 1</xyz>
+            </axis>
+        </joint>
+        <joint name="pivot_joint_6_to_virtual_pivot_3" type="revolute">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>pivot_arm_6</parent>
+            <child>virtual_pivot_3</child>
+            <axis>
+                <xyz>0 0 1</xyz>
+            </axis>
+        </joint>
+        <joint name="virtual_pivot_1_to_end_effector" type="fixed">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>virtual_pivot_1</parent>
+            <child>end_effector</child>
+        </joint>
+        <plugin filename="libgz-sim-detachable-joint-system.so" name="gz::sim::systems::DetachableJoint">
+            <parent_link>virtual_pivot_2</parent_link>
+            <child_model>delta_robot</child_model>
+            <child_link>end_effector</child_link>
+        </plugin>
+        <plugin filename="libgz-sim-detachable-joint-system.so" name="gz::sim::systems::DetachableJoint">
+            <parent_link>virtual_pivot_3</parent_link>
+            <child_model>delta_robot</child_model>
+            <child_link>end_effector</child_link>
+        </plugin>
+        <joint name="end_effector_to_differential_c_arm" type="fixed">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>end_effector</parent>
+            <child>differential_c_arm</child>
+        </joint>
+        <joint name="differential_T_joint" type="revolute">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>differential_c_arm</parent>
+            <child>differentialT</child>
+            <axis>
+                <xyz>1 0 0</xyz>
+            </axis>
+        </joint>
+        <joint name="differential_pinion_joint_1" type="revolute">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>differential_c_arm</parent>
+            <child>bevel_pinion_1</child>
+            <axis>
+                <xyz>0 1 0</xyz>
+            </axis>
+        </joint>
+        <joint name="differential_pinion_joint_2" type="revolute">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>differential_c_arm</parent>
+            <child>bevel_pinion_2</child>
+            <axis>
+                <xyz>0 1 0</xyz>
+            </axis>
+        </joint>
+        <joint name="differential_EE_joint" type="revolute">
+            <pose>0 0 0 0 0 0</pose>
+            <parent>differentialT</parent>
+            <child>bevel_gear_ee</child>
+            <axis>
+                <xyz>0 1 0</xyz>
+            </axis>
+        </joint>
+        <ros2_control name="GazeboSimSystem" type="system">
+            <hardware>
+                <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+            </hardware>
+            <joint name="motor_joint_2">
+                <command_interface name="position" />
+                <state_interface name="position" />
+                <state_interface name="velocity" />
+            </joint>
+            <joint name="motor_joint_1">
+                <command_interface name="position" />
+                <state_interface name="position" />
+                <state_interface name="velocity" />
+            </joint>
+            <joint name="motor_joint_3">
+                <command_interface name="position" />
+                <state_interface name="position" />
+                <state_interface name="velocity" />
+            </joint>
+            <joint name="differential_pinion_joint_1">
+                <command_interface name="position" />
+                <state_interface name="position" />
+                <state_interface name="velocity" />
+            </joint>
+            <joint name="differential_pinion_joint_2">
+                <command_interface name="position" />
+                <state_interface name="position" />
+                <state_interface name="velocity" />
+            </joint>
+            <joint name="differential_T_joint">
+                <command_interface name="position" />
+                <state_interface name="position" />
+                <state_interface name="velocity" />
+            </joint>
+            <joint name="differential_EE_joint">
+                <command_interface name="position" />
+                <state_interface name="position" />
+                <state_interface name="velocity" />
+            </joint>
+        </ros2_control>
+        <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+            <parameters>$(find delta_robot_sim)/config/ros2_controllers.yaml</parameters>
+        </plugin>
+        <plugin filename="gz-sim-pose-publisher-system" name="gz::sim::systems::PosePublisher">
+            <publish_link_pose>true</publish_link_pose>
+            <use_pose_vector_msg>true</use_pose_vector_msg>
+            <static_publisher>false</static_publisher>
+            <static_update_frequency>100</static_update_frequency>
+        </plugin>
+    </model>
+</sdf>

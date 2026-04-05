@@ -102,7 +102,7 @@ class DeltaGUI(QWidget):
 
         self.sl_x, self.lbl_x = self.create_slider("X", -200, 200, 0, pos_layout)
         self.sl_y, self.lbl_y = self.create_slider("Y", -200, 200, 0, pos_layout)
-        self.sl_z, self.lbl_z = self.create_slider("Z", -400, -150, -270, pos_layout)
+        self.sl_z, self.lbl_z = self.create_slider("Z", -300, -125, -270, pos_layout)
 
         pos_group.setLayout(pos_layout)
         main_layout.addWidget(pos_group)

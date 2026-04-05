@@ -35,10 +35,22 @@ float deg_to_us(float deg) {
            (SERVO_MAX_DEG - SERVO_MIN_DEG) + SERVO_MIN_US;
 }
 
+// S-curve (smoothstep) interpolation for smooth servo movement
+float s_curve_interp(float t) {
+    // Clamp t to [0,1]
+    t = fmaxf(0.0f, fminf(1.0f, t));
+    // Smoothstep: 3t^2 - 2t^3
+    return t * t * (3.0f - 2.0f * t);
+}
+
 void update_servos() {
-    const float alpha = 0.25f; 
+    const float alpha = 0.15f; // Lower alpha for smoother motion
     for (int i = 0; i < NUM_SERVOS; i++) {
-        servos[i].current_deg += alpha * (servos[i].target_deg - servos[i].current_deg);
+        float delta = servos[i].target_deg - servos[i].current_deg;
+        if (fabsf(delta) < 0.01f) continue; // Already at target
+        float t = alpha;
+        float s = s_curve_interp(t);
+        servos[i].current_deg += delta * s;
         uint32_t us = (uint32_t)deg_to_us(servos[i].current_deg);
         mcpwm_comparator_set_compare_value(servos[i].comparator, us);
     }

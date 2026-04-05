@@ -46,14 +46,15 @@ class SmoothDeltaController5DOF(Node):
         # IK solver with SIMULATION geometry
         # Sim: r_base=0.0758, r_ee=0.035, l1=0.075, l2=0.2639
         # Real: 0.104, 0.040, 0.105, 0.205 (default in delta_ik.py)
-        self.ik = DeltaIK()
+        self.ik = DeltaIK(r_base = 0.08260127, r_ee= 0.0325, 
+                 l_upper = 0.100, l_lower = 0.200)
         
         # --- STATE ---
-        self.current_pos = [0.0, 0.0, -0.25]
+        self.current_pos = [0.0, 0.0, -0.15]
         self.current_tilt = 0.0
         self.current_spin = 0.0
         
-        self.target_pos = [0.0, 0.0, -0.25]
+        self.target_pos = [0.0, 0.0, -0.15]
         self.target_tilt = 0.0
         self.target_spin = 0.0
         
@@ -207,7 +208,15 @@ class SmoothDeltaController5DOF(Node):
 
             # Build joint trajectory message
             msg = JointTrajectory()
-            msg.joint_names = ['jbf1', 'jbf2', 'jbf3', 'Bevelj1', 'Bevelj2', 'Tj1', 'BeveljEE']
+            msg.joint_names = [
+                'motor_joint_1',
+                'motor_joint_2',
+                'motor_joint_3',
+                'differential_pinion_joint_1',
+                'differential_pinion_joint_2',
+                'differential_T_joint',
+                'differential_EE_joint'
+            ]
 
             point = JointTrajectoryPoint()
             point.positions = [

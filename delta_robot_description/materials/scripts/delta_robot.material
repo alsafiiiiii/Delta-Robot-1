@@ -1,0 +1,89 @@
+material DeltaRobot/DarkGrey
+{
+  technique { pass {
+      ambient 0.2 0.2 0.2 1.0
+      diffuse 0.2 0.2 0.2 1.0
+      specular 0.5 0.5 0.5 1.0 12.5
+  } }
+}
+
+material DeltaRobot/Blue
+{
+  technique { pass {
+      ambient 0.1 0.1 0.5 1.0
+      diffuse 0.1 0.1 0.8 1.0
+      specular 0.5 0.5 0.5 1.0 12.5
+  } }
+}
+
+material DeltaRobot/Green
+{
+  technique { pass {
+      ambient 0.1 0.2 0.1 1.0
+      diffuse 0.2 0.8 0.2 1.0
+      specular 0.5 0.5 0.5 1.0 12.5
+  } }
+}
+
+material DeltaRobot/Purple
+{
+  technique { pass {
+      ambient 0.2 0.1 0.2 1.0
+      diffuse 0.8 0.2 0.8 1.0
+      specular 0.5 0.5 0.5 1.0 12.5
+  } }
+}
+
+material DeltaRobot/Red
+{
+  technique { pass {
+      ambient 0.2 0.1 0.1 1.0
+      diffuse 0.8 0.2 0.2 1.0
+      specular 0.5 0.5 0.5 1.0 12.5
+  } }
+}
+
+material DeltaRobot/Cyan
+{
+  technique { pass {
+      ambient 0.1 0.2 0.2 1.0
+      diffuse 0.2 0.8 0.8 1.0
+      specular 0.5 0.5 0.5 1.0 12.5
+  } }
+}
+
+material DeltaRobot/Silver
+{
+  technique { pass {
+      ambient 0.4 0.4 0.4 1.0
+      diffuse 0.7 0.7 0.7 1.0
+      specular 0.8 0.8 0.8 1.0 20.0
+  } }
+}
+
+material DeltaRobot/Orange
+{
+  technique { pass {
+      ambient 0.3 0.15 0.0 1.0
+      diffuse 0.8 0.4 0.0 1.0
+      specular 0.5 0.5 0.5 1.0 12.5
+  } }
+}
+
+material DeltaRobot/Yellow
+{
+  technique { pass {
+      ambient 0.3 0.3 0.1 1.0
+      diffuse 0.8 0.8 0.1 1.0
+      specular 0.5 0.5 0.5 1.0 12.5
+  } }
+}
+
+material DeltaRobot/LightGrey
+{
+  technique { pass {
+      ambient 0.3 0.3 0.3 1.0
+      diffuse 0.6 0.6 0.6 1.0
+      specular 0.5 0.5 0.5 1.0 12.5
+  } }
+}

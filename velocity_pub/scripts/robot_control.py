@@ -119,7 +119,7 @@ class EspSerialBridge(Node):
             raw_degs = [math.degrees(p) for p in point.positions[:5]]
         
             # --- CALIBRATION FIX ---
-            OFFSET = 0.0
+            OFFSET = 30.0
             BEVEL1_OFFSET = 90.0  # Set your desired offset for joint 4
             BEVEL2_OFFSET = 90.0  # Set your desired offset for joint 5
 

@@ -1,101 +1,339 @@
 Panels:
   - Class: rviz_common/Displays
-    Help Height: 0
+    Help Height: 70
     Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /Global Options1
+      Splitter Ratio: 0.5
+    Tree Height: 460
   - Class: rviz_common/Views
+    Expanded:
+      - /Current View1
     Name: Views
+    Splitter Ratio: 0.5
 Visualization Manager:
   Class: ""
   Displays:
-    - Class: rviz_default_plugins/Grid
+    - Alpha: 0.5
+      Cell Size: 1
+      Class: rviz_default_plugins/Grid
+      Color: 160; 160; 164
       Enabled: true
+      Line Style:
+        Line Width: 0.029999999329447746
+        Value: Lines
       Name: Grid
+      Normal Cell Count: 0
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Plane: XY
       Plane Cell Count: 10
       Reference Frame: <Fixed Frame>
       Value: true
-    - Class: rviz_default_plugins/RobotModel
+    - Alpha: 1
+      Class: rviz_default_plugins/RobotModel
+      Collision Enabled: false
+      Description File: ""
       Description Source: Topic
       Description Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
         Value: /robot_description
       Enabled: true
-      Name: RobotModel
-      TF Prefix: delta_robot
-      Value: true
       Links:
         All Links Enabled: true
-        Bevel1: {Value: true}
-        Bevel2: {Value: true}
-        EE: {Value: true}
-        EEBase: {Value: true}
-        Frame: {Value: true}
-        T: {Value: true}
-        arm1: {Value: true}
-        arm2: {Value: true}
-        arm3: {Value: true}
-        arm4: {Value: true}
-        arm5: {Value: true}
-        arm6: {Value: true}
-        base: {Value: true}
-        camera: {Value: true}
-        camera_bar: {Value: true}
-        camera_holder: {Value: true}
-        camera_stick: {Value: true}
-        dummy_arm1: {Value: false}
-        dummy_arm2: {Value: false}
-        dummy_arm3: {Value: false}
-        dummy_arm4: {Value: false}
-        dummy_arm5: {Value: false}
-        dummy_arm6: {Value: false}
-        eye_to_hand_cam: {Value: true}
-        forearm1: {Value: true}
-        forearm2: {Value: true}
-        forearm3: {Value: true}
-        world_link: {Value: false}
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+        bevel_gear_ee:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        bevel_pinion_1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        bevel_pinion_2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        bicep1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        bicep2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        bicep3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        delta_base-v1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        differentialT:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        differential_c_arm:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        end_effector:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        forearm_1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        forearm_2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        forearm_3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        forearm_4:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        forearm_5:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        forearm_6:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        pivot_arm_1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        pivot_arm_2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        pivot_arm_3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        pivot_arm_4:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        pivot_arm_5:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        pivot_arm_6:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rod_cap_1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rod_cap_10:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rod_cap_10_1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        rod_cap_11:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rod_cap_12:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rod_cap_12_1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        rod_cap_2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rod_cap_3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rod_cap_4:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rod_cap_5:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rod_cap_6:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rod_cap_7:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rod_cap_8:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rod_cap_8_1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        rod_cap_9:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        servo_1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        servo_1_horn:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        servo_2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        servo_2_horn:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        servo_3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        servo_3_horn:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        servo_mount_1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        servo_mount_2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        servo_mount_3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        virtual_pivot_1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        virtual_pivot_2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        virtual_pivot_3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        world_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+      Mass Properties:
+        Inertia: false
+        Mass: false
+      Name: RobotModel
+      TF Prefix: delta_robot
+      Update Interval: 0
+      Value: true
+      Visual Enabled: true
     - Class: rviz_default_plugins/TF
-      Enabled: true
+      Enabled: false
+      Filter (blacklist): ""
+      Filter (whitelist): ""
+      Frame Timeout: 15
+      Frames:
+        All Enabled: false
+      Marker Scale: 0.30000001192092896
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: false
-      Marker Scale: 0.3
-      Value: true
-      Frames:
-        All Enabled: false
-        delta_robot: {Value: true}
-        delta_robot/Bevel1: {Value: false}
-        delta_robot/Bevel2: {Value: false}
-        delta_robot/EE: {Value: true}
-        delta_robot/EEBase: {Value: false}
-        delta_robot/Frame: {Value: false}
-        delta_robot/T: {Value: false}
-        delta_robot/arm1: {Value: false}
-        delta_robot/arm2: {Value: false}
-        delta_robot/arm3: {Value: false}
-        delta_robot/arm4: {Value: false}
-        delta_robot/arm5: {Value: false}
-        delta_robot/arm6: {Value: false}
-        delta_robot/base: {Value: false}
-        delta_robot/camera: {Value: false}
-        delta_robot/camera_bar: {Value: false}
-        delta_robot/camera_holder: {Value: false}
-        delta_robot/camera_stick: {Value: false}
-        delta_robot/dummy_arm1: {Value: false}
-        delta_robot/dummy_arm2: {Value: false}
-        delta_robot/dummy_arm3: {Value: false}
-        delta_robot/dummy_arm4: {Value: false}
-        delta_robot/dummy_arm5: {Value: false}
-        delta_robot/dummy_arm6: {Value: false}
-        delta_robot/eye_to_hand_cam: {Value: false}
-        delta_robot/forearm1: {Value: false}
-        delta_robot/forearm2: {Value: false}
-        delta_robot/forearm3: {Value: false}
-        delta_robot/world_link: {Value: false}
+      Tree:
+        {}
+      Update Interval: 0
+      Value: false
     - Class: rviz_default_plugins/Marker
       Enabled: true
       Name: Marker
       Namespaces:
-        ee_trajectory: true
+        {}
       Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
         Value: /delta_robot/ee_path
       Value: true
   Enabled: true
@@ -106,17 +344,48 @@ Visualization Manager:
   Name: root
   Tools:
     - Class: rviz_default_plugins/Interact
+      Hide Inactive Objects: true
     - Class: rviz_default_plugins/MoveCamera
     - Class: rviz_default_plugins/Select
     - Class: rviz_default_plugins/FocusCamera
     - Class: rviz_default_plugins/Measure
+      Line color: 128; 128; 0
   Transformation:
     Current:
       Class: rviz_default_plugins/TF
+  Value: true
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 0.7612048387527466
+      Distance: 0.4017120599746704
+      Enable Stereo Rendering:
+        Stereo Eye Separation: 0.05999999865889549
+        Stereo Focal Distance: 1
+        Swap Stereo Eyes: false
+        Value: false
+      Focal Point:
+        X: 0.04372403398156166
+        Y: -0.017850955948233604
+        Z: -0.09818325191736221
+      Focal Shape Fixed Size: true
+      Focal Shape Size: 0.05000000074505806
+      Invert Z Axis: false
       Name: Current View
+      Near Clip Distance: 0.009999999776482582
+      Pitch: 0.23539862036705017
       Target Frame: delta_robot
       Value: Orbit (rviz)
+      Yaw: 4.878570079803467
+    Saved: ~
+Window Geometry:
+  Displays:
+    collapsed: false
+  Height: 1168
+  Hide Left Dock: false
+  Hide Right Dock: false
+  QMainWindow State: 000000ff00000000fd0000000100000000000001b400000432fc0200000002fb000000100044006900730070006c006100790073010000003f00000252000000cc00fffffffb0000000a005600690065007700730100000297000001da000000a900ffffff000005c60000043200000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  Views:
+    collapsed: false
+  Width: 1920
+  X: 0
+  Y: 0

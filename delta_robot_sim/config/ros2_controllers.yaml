@@ -1,6 +1,6 @@
 controller_manager:
   ros__parameters:
-    update_rate: 100  # Hz
+    update_rate: 1000  # Hz
 
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
@@ -11,13 +11,13 @@ controller_manager:
 joint_trajectory_controller:
   ros__parameters:
     joints:
-      - jbf1
-      - jbf2
-      - jbf3
-      - Bevelj1
-      - Bevelj2
-      - Tj1
-      - BeveljEE
+      - motor_joint_1
+      - motor_joint_2
+      - motor_joint_3
+      - differential_pinion_joint_1
+      - differential_pinion_joint_2
+      - differential_T_joint
+      - differential_EE_joint
 
     command_interfaces:
       - position

@@ -1,17 +1,17 @@
 import os
 import math
 from pathlib import Path
+from setuptools import Command
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable, TimerAction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
-
-# Add these imports at the top
+from launch_ros.descriptions import ParameterValue
 from launch.actions import DeclareLaunchArgument
 from launch.conditions import IfCondition
-from launch.substitutions import LaunchConfiguration
-
+from launch.substitutions import Command
+import xacro
 
 def generate_launch_description():
     # --- 1. Setup Paths ---
@@ -40,9 +40,11 @@ def generate_launch_description():
     )
 
     # Load SDF
-    sdf_file = os.path.join(delta_robot_description_path, "models", "model.sdf")
-    with open(sdf_file, "r") as infp:
-        robot_desc = infp.read()
+    xacro_file = os.path.join(delta_robot_description_path, "models", "model.sdf.xacro")
+
+    # Process the XACRO file right now and convert it into a standard Python string
+    doc = xacro.process_file(xacro_file)
+    robot_desc = doc.toxml()
 
     # Load Box SDF
     box_sdf_file = os.path.join(delta_robot_description_path, "models", "box.sdf")
@@ -66,7 +68,7 @@ def generate_launch_description():
             os.path.join(pkg_ros_gz_sim, "launch", "gz_sim.launch.py")
         ),
         launch_arguments={
-            "gz_args": f"-r -v 1 --gui-config {gz_gui_config} {world_file}"
+            "gz_args": f"-r -v 1 --gui-config {gz_gui_config} {world_file} --physics-engine gz-physics-bullet-featherstone-plugin"
         }.items(),
     )
 
