@@ -40,7 +40,7 @@ def generate_launch_description():
     )
 
     # Load SDF
-    xacro_file = os.path.join(delta_robot_description_path, "models", "model.sdf.xacro")
+    xacro_file = os.path.join(delta_robot_description_path, "models", "model_high.sdf.xacro")
 
     # Process the XACRO file right now and convert it into a standard Python string
     doc = xacro.process_file(xacro_file)

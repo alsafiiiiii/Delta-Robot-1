@@ -673,14 +673,10 @@
         <xacro:sts_circular_horn_link       n="2" relative_to="differential_servo_2"/>
         <xacro:end_effector_pinion          n="1" relative_to="sts_circular_horn_1"/>
         <xacro:end_effector_pinion          n="2" relative_to="sts_circular_horn_2"/>
-        <link name="virtual_middle_shaft">
-            <self_collide>false</self_collide>
-            <pose relative_to="end_effector_pinion_1">0 0.028 0 ${-pi/2} 0 ${-pi/2}</pose>
-        </link>
         <!-- Middle shaft — driven (differential_T_joint child) -->
         <link name="middle_shaft">
             <self_collide>false</self_collide>
-            <pose relative_to="virtual_middle_shaft">0 0.0070 0 0 0 0</pose>
+            <pose relative_to="end_effector_pinion_1">0 0.028 -0.0070 ${-pi/2} 0 ${-pi/2}</pose>
             <inertial>
                 <mass>0.0162455078</mass>
                 <!-- driven: all cross-terms < 1e-9 → zeroed; negligible CoM x/z offsets → zeroed -->
@@ -815,14 +811,12 @@
         <xacro:fixed_joint    name="end_effector_to_base_plate"   parent="end_effector"            child="end_effector_base_plate"/>
         <xacro:fixed_joint    name="base_plate_to_side_plate_1"   parent="end_effector_base_plate" child="end_effector_side_plate_1"/>
         <xacro:fixed_joint    name="base_plate_to_side_plate_2"   parent="end_effector_base_plate" child="end_effector_side_plate_2"/>
-        
-        <xacro:revolute_joint name="differential_T_joint"         parent="end_effector_base_plate" child="virtual_middle_shaft"           ax="-1" ay="0"  az="0"/>
+        <xacro:revolute_joint name="differential_T_joint"         parent="end_effector_base_plate" child="middle_shaft"           ax="1" ay="0"  az="0"/>
         <xacro:fixed_joint    name="side_plate_1_to_diff_servo_1" parent="end_effector_side_plate_1" child="differential_servo_1"/>
         <xacro:fixed_joint    name="side_plate_2_to_diff_servo_2" parent="end_effector_side_plate_2" child="differential_servo_2"/>
-        <xacro:fixed_joint    name="virtual_middle_shaft_to_middle_shaft"     parent="virtual_middle_shaft"     child="middle_shaft"/>
-        <xacro:revolute_joint name="differential_EE_joint"        parent="middle_shaft"            child="bevel_gear_ee"          ax="0" ay="1" az="0"/>
-        <xacro:revolute_joint name="differential_pinion_joint_1"  parent="differential_servo_1"    child="sts_circular_horn_1"    ax="1" ay="0"  az="0"/>
-        <xacro:revolute_joint name="differential_pinion_joint_2"  parent="differential_servo_2"    child="sts_circular_horn_2"    ax="1" ay="0"  az="0"/>
+        <xacro:revolute_joint name="differential_EE_joint"        parent="middle_shaft"            child="bevel_gear_ee"          ax="0" ay="-1" az="0"/>
+        <xacro:revolute_joint name="differential_pinion_joint_1"  parent="differential_servo_1"    child="sts_circular_horn_1"    ax="-1" ay="0"  az="0"/>
+        <xacro:revolute_joint name="differential_pinion_joint_2"  parent="differential_servo_2"    child="sts_circular_horn_2"    ax="-1" ay="0"  az="0"/>
         <xacro:fixed_joint    name="sts_horn_1_to_ee_pinion_1"    parent="sts_circular_horn_1"     child="end_effector_pinion_1"/>
         <xacro:fixed_joint    name="sts_horn_2_to_ee_pinion_2"    parent="sts_circular_horn_2"     child="end_effector_pinion_2"/>
         <!-- ══════════════════════════════════════════════════════════

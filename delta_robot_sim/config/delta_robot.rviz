@@ -5,6 +5,8 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
+        - /TF1
+        - /TF1/Frames1
       Splitter Ratio: 0.5
     Tree Height: 460
   - Class: rviz_common/Views
@@ -243,6 +245,11 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        servo_1_free_horn:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         servo_1_horn:
           Alpha: 1
           Show Axes: false
@@ -253,12 +260,22 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        servo_2_free_horn:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         servo_2_horn:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
         servo_3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        servo_3_free_horn:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -308,21 +325,239 @@ Visualization Manager:
       Value: true
       Visual Enabled: true
     - Class: rviz_default_plugins/TF
-      Enabled: false
+      Enabled: true
       Filter (blacklist): ""
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
         All Enabled: false
+        delta_robot:
+          Value: false
+        delta_robot/bevel_gear_ee:
+          Value: false
+        delta_robot/bevel_pinion_1:
+          Value: false
+        delta_robot/bevel_pinion_2:
+          Value: false
+        delta_robot/bicep1:
+          Value: false
+        delta_robot/bicep2:
+          Value: false
+        delta_robot/bicep3:
+          Value: false
+        delta_robot/delta_base-v1:
+          Value: false
+        delta_robot/differentialT:
+          Value: false
+        delta_robot/differential_c_arm:
+          Value: false
+        delta_robot/end_effector:
+          Value: true
+        delta_robot/forearm_1:
+          Value: false
+        delta_robot/forearm_2:
+          Value: false
+        delta_robot/forearm_3:
+          Value: false
+        delta_robot/forearm_4:
+          Value: false
+        delta_robot/forearm_5:
+          Value: false
+        delta_robot/forearm_6:
+          Value: false
+        delta_robot/frame:
+          Value: false
+        delta_robot/pivot_arm_1:
+          Value: false
+        delta_robot/pivot_arm_2:
+          Value: false
+        delta_robot/pivot_arm_3:
+          Value: false
+        delta_robot/pivot_arm_4:
+          Value: false
+        delta_robot/pivot_arm_5:
+          Value: false
+        delta_robot/pivot_arm_6:
+          Value: false
+        delta_robot/rod_cap_1:
+          Value: false
+        delta_robot/rod_cap_10:
+          Value: false
+        delta_robot/rod_cap_10_1:
+          Value: false
+        delta_robot/rod_cap_11:
+          Value: false
+        delta_robot/rod_cap_12:
+          Value: false
+        delta_robot/rod_cap_12_1:
+          Value: false
+        delta_robot/rod_cap_2:
+          Value: false
+        delta_robot/rod_cap_3:
+          Value: false
+        delta_robot/rod_cap_4:
+          Value: false
+        delta_robot/rod_cap_5:
+          Value: false
+        delta_robot/rod_cap_6:
+          Value: false
+        delta_robot/rod_cap_7:
+          Value: false
+        delta_robot/rod_cap_8:
+          Value: false
+        delta_robot/rod_cap_8_1:
+          Value: false
+        delta_robot/rod_cap_9:
+          Value: false
+        delta_robot/servo_1:
+          Value: false
+        delta_robot/servo_1_free_horn:
+          Value: false
+        delta_robot/servo_1_horn:
+          Value: false
+        delta_robot/servo_2:
+          Value: false
+        delta_robot/servo_2_free_horn:
+          Value: false
+        delta_robot/servo_2_horn:
+          Value: false
+        delta_robot/servo_3:
+          Value: false
+        delta_robot/servo_3_free_horn:
+          Value: false
+        delta_robot/servo_3_horn:
+          Value: false
+        delta_robot/servo_mount_1:
+          Value: false
+        delta_robot/servo_mount_2:
+          Value: false
+        delta_robot/servo_mount_3:
+          Value: false
+        delta_robot/virtual_pivot_1:
+          Value: false
+        delta_robot/virtual_pivot_2:
+          Value: false
+        delta_robot/virtual_pivot_3:
+          Value: false
+        delta_robot/world_link:
+          Value: false
       Marker Scale: 0.30000001192092896
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: false
       Tree:
-        {}
+        delta_robot:
+          delta_robot/bevel_gear_ee:
+            {}
+          delta_robot/bevel_pinion_1:
+            {}
+          delta_robot/bevel_pinion_2:
+            {}
+          delta_robot/bicep1:
+            {}
+          delta_robot/bicep2:
+            {}
+          delta_robot/bicep3:
+            {}
+          delta_robot/delta_base-v1:
+            {}
+          delta_robot/differentialT:
+            {}
+          delta_robot/differential_c_arm:
+            {}
+          delta_robot/end_effector:
+            {}
+          delta_robot/forearm_1:
+            {}
+          delta_robot/forearm_2:
+            {}
+          delta_robot/forearm_3:
+            {}
+          delta_robot/forearm_4:
+            {}
+          delta_robot/forearm_5:
+            {}
+          delta_robot/forearm_6:
+            {}
+          delta_robot/frame:
+            {}
+          delta_robot/pivot_arm_1:
+            {}
+          delta_robot/pivot_arm_2:
+            {}
+          delta_robot/pivot_arm_3:
+            {}
+          delta_robot/pivot_arm_4:
+            {}
+          delta_robot/pivot_arm_5:
+            {}
+          delta_robot/pivot_arm_6:
+            {}
+          delta_robot/rod_cap_1:
+            {}
+          delta_robot/rod_cap_10:
+            {}
+          delta_robot/rod_cap_10_1:
+            {}
+          delta_robot/rod_cap_11:
+            {}
+          delta_robot/rod_cap_12:
+            {}
+          delta_robot/rod_cap_12_1:
+            {}
+          delta_robot/rod_cap_2:
+            {}
+          delta_robot/rod_cap_3:
+            {}
+          delta_robot/rod_cap_4:
+            {}
+          delta_robot/rod_cap_5:
+            {}
+          delta_robot/rod_cap_6:
+            {}
+          delta_robot/rod_cap_7:
+            {}
+          delta_robot/rod_cap_8:
+            {}
+          delta_robot/rod_cap_8_1:
+            {}
+          delta_robot/rod_cap_9:
+            {}
+          delta_robot/servo_1:
+            {}
+          delta_robot/servo_1_free_horn:
+            {}
+          delta_robot/servo_1_horn:
+            {}
+          delta_robot/servo_2:
+            {}
+          delta_robot/servo_2_free_horn:
+            {}
+          delta_robot/servo_2_horn:
+            {}
+          delta_robot/servo_3:
+            {}
+          delta_robot/servo_3_free_horn:
+            {}
+          delta_robot/servo_3_horn:
+            {}
+          delta_robot/servo_mount_1:
+            {}
+          delta_robot/servo_mount_2:
+            {}
+          delta_robot/servo_mount_3:
+            {}
+          delta_robot/virtual_pivot_1:
+            {}
+          delta_robot/virtual_pivot_2:
+            {}
+          delta_robot/virtual_pivot_3:
+            {}
+          delta_robot/world_link:
+            {}
       Update Interval: 0
-      Value: false
+      Value: true
     - Class: rviz_default_plugins/Marker
       Enabled: true
       Name: Marker
@@ -357,25 +592,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 0.4017120599746704
+      Distance: 0.6209439635276794
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.04372403398156166
-        Y: -0.017850955948233604
-        Z: -0.09818325191736221
+        X: 0.00701121985912323
+        Y: -0.0009366243612021208
+        Z: -0.12125783413648605
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.23539862036705017
+      Pitch: 0.315398246049881
       Target Frame: delta_robot
       Value: Orbit (rviz)
-      Yaw: 4.878570079803467
+      Yaw: 0.2603752017021179
     Saved: ~
 Window Geometry:
   Displays:
@@ -383,7 +618,7 @@ Window Geometry:
   Height: 1168
   Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd0000000100000000000001b400000432fc0200000002fb000000100044006900730070006c006100790073010000003f00000252000000cc00fffffffb0000000a005600690065007700730100000297000001da000000a900ffffff000005c60000043200000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000100000000000002f900000432fc0200000002fb000000100044006900730070006c006100790073010000003f00000252000000cc00fffffffb0000000a005600690065007700730100000297000001da000000a900ffffff000004810000043200000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Views:
     collapsed: false
   Width: 1920

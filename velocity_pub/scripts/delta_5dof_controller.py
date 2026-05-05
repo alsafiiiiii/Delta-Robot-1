@@ -43,11 +43,8 @@ class SmoothDeltaController5DOF(Node):
         # Tool offset for 5DOF (distance from wrist to end-effector tip)
         self.tool_offset = 0.033  # 33mm
         
-        # IK solver with SIMULATION geometry
-        # Sim: r_base=0.0758, r_ee=0.035, l1=0.075, l2=0.2639
-        # Real: 0.104, 0.040, 0.105, 0.205 (default in delta_ik.py)
-        self.ik = DeltaIK(r_base = 0.08260127, r_ee= 0.0325, 
-                 l_upper = 0.100, l_lower = 0.200)
+        # IK solver
+        self.ik = DeltaIK()
         
         # --- STATE ---
         self.current_pos = [0.0, 0.0, -0.15]
