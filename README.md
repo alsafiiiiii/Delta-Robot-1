@@ -91,19 +91,12 @@ See the [LICENSE](LICENSE) file for the full text of the GNU General Public Lice
 ## Contributing & Feedback
 If you have suggestions, find bugs, or want to contribute to the development of the Delta Robot project, please open an **Issue** or submit a **Pull Request**.
 
----
-
-## Original Credits & Authorship
-This project is a high-level refactor and expansion of the department's original Delta Robot codebase. We acknowledge the foundational work provided by the NMAMIT Robotics Lab.
-
-**Lead Architects & Developers:**
+## Authors & Contributors
 * **Likhithraj T Acharya**
 * **Rajat Pandya**
 * **Kshma Pai**
 * **Vaibhav Kulal**
 
-**Institution:** NMAMIT, Nitte (Department of Robotics & AI Engineering)
-
-For detailed licensing conditions, derivative work requirements, and notification protocols, see [CONTRIBUTORS.md](CONTRIBUTORS.md).
+For detailed roles, project history, and licensing conditions, see [CONTRIBUTORS.md](CONTRIBUTORS.md).
 
 ---

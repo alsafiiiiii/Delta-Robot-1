@@ -1,10 +1,10 @@
 # Project Contributors
 
-## System Architects & Primary Developers
-* **Likhithraj T Acharya** (Lead Architect)
-* **Rajat Pandya** (Motion Control & Kinematics)
-* **Kshma Pai** (System Integration)
-* **Vaibhav Kulal** (Hardware Testing)
+## Team Members
+* **Likhithraj T Acharya** 
+* **Rajat Pandya** 
+* **Kshma Pai** 
+* **Vaibhav Kulal**
 
 ## Institution
 NMAMIT, Nitte (Department of Robotics & AI Engineering)
