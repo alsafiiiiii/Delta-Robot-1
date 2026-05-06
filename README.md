@@ -93,29 +93,17 @@ If you have suggestions, find bugs, or want to contribute to the development of 
 
 ---
 
-## Licensing & Attribution
+## Original Credits & Authorship
+This project is a high-level refactor and expansion of the department's original Delta Robot codebase. We acknowledge the foundational work provided by the NMAMIT Robotics Lab.
 
-This project is licensed under the **GNU GPL v3**. 
-
-### Derivative Works & Commercial Use
-If you are incorporating this architecture, code, or any part of this system into a **commercial product or service**, the authors **must** be notified and credited as the **Original System Architects**.
-
-This requirement applies even if the code is:
-*   **Heavily Modified**: Including structural changes or refactoring.
-*   **Patched/Extended**: Adding new functions or "patching" existing ones for specific use cases.
-*   **Integrated**: Using this system as a subsystem within a larger machine or product.
-
-While the GPL allows for redistribution, we mandate a "Notification of Use" to ensure the original innovation is respected. Please contact the architects before commercialization:
-
-**Architects & Contributors:**
-* **Likhithraj T Acharya** ([likhiacharya@gmail.com](mailto:likhiacharya@gmail.com))
+**Lead Architects & Developers:**
+* **Likhithraj T Acharya**
 * **Rajat Pandya**
 * **Kshma Pai**
 * **Vaibhav Kulal**
 
 **Institution:** NMAMIT, Nitte (Department of Robotics & AI Engineering)
 
-**Original Credits & Fork Status:**
-This project is a high-level refactor and expansion of the department's original Delta Robot codebase. While it maintains compatibility with the core hardware, the software architecture, ROS 2 integration, and 5-DOF kinematic solvers have been entirely redesigned. We acknowledge the foundational work provided by the NMAMIT Robotics Lab.
+For detailed licensing conditions, derivative work requirements, and notification protocols, see [CONTRIBUTORS.md](CONTRIBUTORS.md).
 
 ---
