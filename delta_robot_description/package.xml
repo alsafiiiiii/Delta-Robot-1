@@ -3,9 +3,9 @@
 <package format="3">
   <name>delta_robot_description</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>ROS 2 package for Delta Robot control and simulation</description>
 
-  <maintainer email="hogehoge@gmail.com">Me</maintainer>
+  <maintainer email="likhiacharya@gmail.com">rikisu</maintainer>
 
   <license>MIT</license>
 

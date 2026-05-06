@@ -29,4 +29,3 @@ ruff.toml
 # Temporary files
 *.swp
 *~
-.gemini/
