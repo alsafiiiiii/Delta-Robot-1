@@ -15,6 +15,7 @@ Example task file:
 ]
 """
 
+import argparse
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Pose
@@ -25,7 +26,7 @@ import time
 import sys
 
 class TaskSequencer(Node):
-    def __init__(self, task_file=None):
+    def __init__(self, task_file=None, loop_enabled=False):
         super().__init__('task_sequencer')
         
         # Publishers
@@ -44,6 +45,7 @@ class TaskSequencer(Node):
         self.HOME = {"x": 0.0, "y": 0.0, "z": -0.27, "tilt": 0.0, "spin": 0.0}
         
         self.get_logger().info("Task Sequencer Ready")
+        self.loop_enabled = loop_enabled
         
         if task_file:
             self.load_and_run(task_file)
@@ -55,7 +57,12 @@ class TaskSequencer(Node):
                 tasks = json.load(f)
             
             self.get_logger().info(f"Loaded {len(tasks)} tasks from {filepath}")
-            self.execute_tasks(tasks)
+            while rclpy.ok():
+                self.execute_tasks(tasks)
+                if not self.loop_enabled:
+                    break
+                self.get_logger().info("Task loop complete. Restarting in 1s...")
+                time.sleep(1.0)
             
         except FileNotFoundError:
             self.get_logger().error(f"Task file not found: {filepath}")
@@ -173,19 +180,22 @@ class TaskSequencer(Node):
 
 
 def main(args=None):
+    parser = argparse.ArgumentParser(description="Delta task sequencer")
+    parser.add_argument("task_file", nargs="?", help="Path to a JSON task file")
+    parser.add_argument(
+        "--loop",
+        action="store_true",
+        help="Loop the task list continuously",
+    )
+    parsed = parser.parse_args()
+
     rclpy.init(args=args)
-    
-    # Get task file from command line
-    task_file = None
-    if len(sys.argv) > 1:
-        task_file = sys.argv[1]
-    
-    node = TaskSequencer(task_file)
-    
-    if not task_file:
-        # Interactive mode - keep running
+
+    node = TaskSequencer(parsed.task_file, loop_enabled=parsed.loop)
+
+    if not parsed.task_file:
         rclpy.spin(node)
-    
+
     node.destroy_node()
     rclpy.shutdown()
 

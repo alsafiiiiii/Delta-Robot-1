@@ -11,7 +11,7 @@
         <material>
             <ambient>0.2  0.2  0.2  1</ambient>
             <diffuse>0.3  0.3  0.3  1</diffuse>
-            <specular>0.95 0.95 0.95 1</specular>
+            <specular>1.0  1.0  1.0  1</specular>
         </material>
     </xacro:macro>
     <xacro:macro name="material_anodised_aluminium">
@@ -35,18 +35,18 @@
             <specular>0.1 0.1 0.1 1</specular>
         </material>
     </xacro:macro>
-    <xacro:macro name="material_grey_pla">
-        <material>
-            <ambient>0.15 0.15 0.15 1</ambient>
-            <diffuse>0.4  0.4  0.4  1</diffuse>
-            <specular>0.05 0.05 0.05 1</specular>
-        </material>
-    </xacro:macro>
     <xacro:macro name="material_black_pla">
         <material>
             <ambient>0.02 0.02 0.02 1</ambient>
             <diffuse>0.1  0.1  0.1  1</diffuse>
             <specular>0.05 0.05 0.05 1</specular>
+        </material>
+    </xacro:macro>
+    <xacro:macro name="material_orange_pla">
+        <material>
+            <ambient>0.4  0.15 0.0  1</ambient>
+            <diffuse>1.0  0.4  0.0  1</diffuse>
+            <specular>0.1  0.1  0.1  1</specular>
         </material>
     </xacro:macro>
     <xacro:macro name="material_black_abs">
@@ -320,7 +320,7 @@
             <xacro:inertial_pivot_arm_upper/>
             <visual name="pivot_arm_${n}_visual">
                 <xacro:mesh_geometry file="pivot_arm.stl"/>
-                <xacro:material_grey_pla/>
+                <xacro:material_white_pla/>
             </visual>
         </link>
     </xacro:macro>
@@ -370,7 +370,7 @@
             <visual name="pivot_arm_${n}_visual">
                 <pose>0 0 -0.016 0 0 0</pose>
                 <xacro:mesh_geometry file="pivot_arm.stl"/>
-                <xacro:material_grey_pla/>
+                <xacro:material_white_pla/>
             </visual>
         </link>
     </xacro:macro>
@@ -400,6 +400,7 @@
             </inertial>
             <visual name="end_effector_side_plate_${n}_visual">
                 <xacro:mesh_geometry file="end_effector_side_plate.stl"/>
+                <xacro:material_orange_pla/>
             </visual>
         </link>
     </xacro:macro>
@@ -479,6 +480,7 @@
             <axis>
                 <xyz>0 1 0</xyz>
             </axis>
+            <limit effort="2.0" velocity="11.1" lower="-3.14159" upper="3.14159"/>
         </joint>
         <joint name="motor_joint_${n}_free" type="revolute">
             <parent>servo_${n}</parent>
@@ -498,6 +500,7 @@
     <model name="delta_robot">
         <!-- World anchor -->
         <link name="world_link">
+            <pose>0 0 0 0 0 ${pi/2}</pose>
             <self_collide>false</self_collide>
             <inertial>
                 <mass>0.01</mass>
@@ -515,7 +518,7 @@
         <link name="frame">
             <self_collide>false</self_collide>
             <static>true</static>
-            <pose>0 0 -0.059454 0 0 0</pose>
+            <pose relative_to="world_link">0 0 -0.059454 0 0 0</pose>
             <inertial>
                 <pose>0 0 0 0 0 0</pose>
                 <mass>700.084375</mass>
@@ -639,7 +642,7 @@
             </inertial>
             <visual name="end_effector_visual">
                 <xacro:mesh_geometry file="end_effector.stl"/>
-                <xacro:material_black_pla/>
+                <xacro:material_orange_pla/>
             </visual>
         </link>
         <!-- ─── Differential mechanism ─── -->
@@ -662,7 +665,7 @@
             </inertial>
             <visual name="end_effector_base_plate_visual">
                 <xacro:mesh_geometry file="end_effector_base_plate.stl"/>
-                <xacro:material_grey_pla/>
+                <xacro:material_orange_pla/>
             </visual>
         </link>
         <xacro:end_effector_side_plate_link n="1" relative_to="end_effector_base_plate"/>
@@ -696,7 +699,7 @@
             </inertial>
             <visual name="middle_shaft_visual">
                 <xacro:mesh_geometry file="middle_shaft.stl"/>
-                <xacro:material_grey_pla/>
+                <xacro:material_black_pla/>
             </visual>
         </link>
         <!-- Bevel gear EE — driven (differential_EE_joint child) -->
@@ -720,6 +723,29 @@
                 <xacro:mesh_geometry file="end_effector_big_gear.stl"/>
                 <xacro:material_black_pla/>
             </visual>
+        </link>
+        <link name="cube">
+            <pose relative_to="bevel_gear_ee"> 0 -0.03775 0  ${-pi/2} 0 0</pose>
+            <inertial>
+                <mass>0.2190086521864867</mass>
+                <pose>-0.0007571147448307052 -0.0004725953633605644 0.00028984668097712914 0.0 0.0 0.0</pose>
+                <inertia>
+                    <ixx>6.725551979614924e-05</ixx>
+                    <iyy>6.782851202234727e-05</iyy>
+                    <izz>6.74186794018338e-05</izz>
+                    <ixy>8.080306097808026e-08</ixy>
+                    <iyz>2.2480222406133124e-07</iyz>
+                    <ixz>-1.1044106726896244e-07</ixz>
+                </inertia>
+            </inertial>
+            <visual name="cube_visual">
+                <xacro:mesh_geometry file="cube.stl"/>
+                <xacro:material_black_pla/>
+            </visual>
+        </link>
+        <link name="end_effector_pin">
+            <self_collide>false</self_collide>
+            <pose relative_to="cube">0 0 0 ${pi/2} ${pi/2} ${pi} </pose>
         </link>
         <!-- ─── Virtual pivot constraints ─── -->
         <xacro:virtual_pivot_link n="1" relative_to="pivot_arm_4"/>
@@ -815,16 +841,17 @@
         <xacro:fixed_joint    name="end_effector_to_base_plate"   parent="end_effector"            child="end_effector_base_plate"/>
         <xacro:fixed_joint    name="base_plate_to_side_plate_1"   parent="end_effector_base_plate" child="end_effector_side_plate_1"/>
         <xacro:fixed_joint    name="base_plate_to_side_plate_2"   parent="end_effector_base_plate" child="end_effector_side_plate_2"/>
-        
         <xacro:revolute_joint name="differential_T_joint"         parent="end_effector_base_plate" child="virtual_middle_shaft"           ax="-1" ay="0"  az="0"/>
         <xacro:fixed_joint    name="side_plate_1_to_diff_servo_1" parent="end_effector_side_plate_1" child="differential_servo_1"/>
         <xacro:fixed_joint    name="side_plate_2_to_diff_servo_2" parent="end_effector_side_plate_2" child="differential_servo_2"/>
         <xacro:fixed_joint    name="virtual_middle_shaft_to_middle_shaft"     parent="virtual_middle_shaft"     child="middle_shaft"/>
-        <xacro:revolute_joint name="differential_EE_joint"        parent="middle_shaft"            child="bevel_gear_ee"          ax="0" ay="1" az="0"/>
+        <xacro:revolute_joint name="differential_EE_joint"        parent="middle_shaft"            child="bevel_gear_ee"          ax="0" ay="-1" az="0"/>
         <xacro:revolute_joint name="differential_pinion_joint_1"  parent="differential_servo_1"    child="sts_circular_horn_1"    ax="1" ay="0"  az="0"/>
         <xacro:revolute_joint name="differential_pinion_joint_2"  parent="differential_servo_2"    child="sts_circular_horn_2"    ax="1" ay="0"  az="0"/>
         <xacro:fixed_joint    name="sts_horn_1_to_ee_pinion_1"    parent="sts_circular_horn_1"     child="end_effector_pinion_1"/>
         <xacro:fixed_joint    name="sts_horn_2_to_ee_pinion_2"    parent="sts_circular_horn_2"     child="end_effector_pinion_2"/>
+        <xacro:fixed_joint    name="bevel_gear_ee_to_cube" parent="bevel_gear_ee" child="cube"/>
+        <xacro:fixed_joint    name="cube_to_end_effector_pin" parent="cube" child="end_effector_pin"/>
         <!-- ══════════════════════════════════════════════════════════
              ROS 2 CONTROL
         ══════════════════════════════════════════════════════════ -->

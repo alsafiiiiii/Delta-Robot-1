@@ -24,6 +24,9 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(trajectory_msgs REQUIRED)  # Added for JointTrajectory
+find_package(sensor_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
@@ -41,22 +44,6 @@ install(
 install(
     PROGRAMS
     scripts/robot_control.py
-    scripts/delta_5dof_controller.py
-    scripts/delta_gcode_interpreter.py
-    scripts/gui_controller.py
-    scripts/joystick_controller.py
-    scripts/camera_pnp.py
-    scripts/delta_3dof_controller.py
-    scripts/delta_explain.py
-    scripts/pid_tuner.py
-    scripts/conveyor_manager.py
-    scripts/task_sequencer.py
-    scripts/sensor_tf_publisher.py
-    scripts/tf_error_plotter.py
-    # Add these supporting modules:
-    scripts/delta_ik.py
-    scripts/delta_utils.py
-    scripts/vector_ruckig.py
     DESTINATION lib/${PROJECT_NAME}
   )
 

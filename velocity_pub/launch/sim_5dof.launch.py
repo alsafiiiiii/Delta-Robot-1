@@ -102,6 +102,14 @@ def generate_launch_description():
         parameters=[{'use_sim_time': True}]
     )
     
+    # 5. RViz 3D Path Plotter
+    plotter3d = Node(
+        package='velocity_pub',
+        executable='plotter3d.py',
+        name='plotter3d',
+        output='screen',
+        parameters=[{'use_sim_time': True}]
+    )
     
     # 6. GUI Controller (optional)
     gui_controller = Node(
@@ -125,6 +133,7 @@ def generate_launch_description():
         spawn_conveyor,
         spawn_landing_pad,
         controller_5dof,
+        plotter3d,
         gui_controller,
         delayed_conveyor_manager,
     ])

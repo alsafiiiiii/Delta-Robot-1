@@ -5,7 +5,7 @@ from geometry_msgs.msg import Pose
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from builtin_interfaces.msg import Duration
 import math
-from delta_ik import DeltaIK
+from delta_kinematics.delta_ik import DeltaIK
 
 def quaternion_to_euler(x, y, z, w):
     t0 = +2.0 * (w * x + y * z)

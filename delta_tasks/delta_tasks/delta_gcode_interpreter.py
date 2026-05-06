@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import argparse
 import rclpy
 from rclpy.node import Node
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
@@ -17,9 +18,10 @@ except ImportError:
     sys.exit(1)
 
 class GCodeVirtualMachine(Node):
-    def __init__(self, filename):
+    def __init__(self, filename, loop_enabled):
         super().__init__('gcode_sender')
         self.traj_pub_ = self.create_publisher(JointTrajectory, '/delta/cartesian_trajectory', 10)
+        self.loop_enabled = loop_enabled
         
         # --- Robot Settings ---
         self.robot_speed = 0.5  # m/s
@@ -60,6 +62,8 @@ class GCodeVirtualMachine(Node):
                     if not rclpy.ok(): break
                     self.execute_command(line)
                 
+                if not self.loop_enabled:
+                    break
                 self.get_logger().info("Job Complete. Restarting in 1s...")
                 time.sleep(1.0)
         except KeyboardInterrupt:
@@ -177,12 +181,17 @@ class GCodeVirtualMachine(Node):
         self.pos['C'] = c
 
 def main(args=None):
+    parser = argparse.ArgumentParser(description="Delta G-code interpreter")
+    parser.add_argument("filename", help="Path to a G-code file")
+    parser.add_argument(
+        "--once",
+        action="store_true",
+        help="Run the file once and exit (default is to loop)",
+    )
+    parsed = parser.parse_args()
+
     rclpy.init(args=args)
-    if len(sys.argv) < 2:
-        print("Usage: python3 delta_gcode_interpreter.py <file.gcode>")
-        sys.exit(1)
-    filename = sys.argv[1]
-    node = GCodeVirtualMachine(filename)
+    node = GCodeVirtualMachine(parsed.filename, loop_enabled=not parsed.once)
     node.destroy_node()
     rclpy.shutdown()
 
