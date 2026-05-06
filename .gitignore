@@ -1,7 +1,32 @@
-.vscode/
+# ROS 2 build files
+build/
+install/
+log/
 repo/
 servo/build/
 servo/.cache/
-velocity_pub/scripts/__pycache__/
+
+# Python files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
 .ruff_cache/
+velocity_pub/scripts/__pycache__/
+
+# Configuration & Formatting
 ruff.toml
+
+# IDE/System files
+.vscode/
+.idea/
+.project
+.pydevproject
+.settings/
+.DS_Store
+
+# Temporary files
+*.swp
+*~
+.gemini/

@@ -51,7 +51,7 @@ DEFAULT_JOINT_NAMES = [
 class DeltaMotorControl(Node):
     def __init__(self):
         super().__init__("delta_motor_control")
-        self.get_logger().info("Python DeltaMotorControl Node Started")
+        self.get_logger().info("Delta Hardware Bridge v1.0 (L-R-K-V)")
 
         self.qos_depth = self.declare_parameter("qos_depth", 10).value
         self.device_name = self.declare_parameter("device_name", DEVICE_NAME).value

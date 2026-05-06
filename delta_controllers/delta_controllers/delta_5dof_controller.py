@@ -33,6 +33,7 @@ def quaternion_to_euler(x, y, z, w):
 class SmoothDeltaController5DOF(Node):
     def __init__(self):
         super().__init__('smooth_delta_controller_5dof')
+        self.get_logger().info('5-DOF Controller v1.0 (L-R-K-V)')
         
         # --- CONTROL PARAMETERS ---
         self.loop_rate = 100.0  # Hz 

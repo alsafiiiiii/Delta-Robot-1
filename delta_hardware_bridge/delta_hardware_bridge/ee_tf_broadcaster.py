@@ -161,7 +161,7 @@ class EETfBroadcaster(Node):
 
         self.update_rate_hz = max(1.0, self.update_rate_hz)
         self.timer = self.create_timer(1.0 / self.update_rate_hz, self.timer_callback)
-        self.get_logger().info("Ready — hold at home position for auto-homing…")
+        self.get_logger().info("Ready - hold at home position for auto-homing...")
 
     def timer_callback(self):
         try:
@@ -220,7 +220,7 @@ class EETfBroadcaster(Node):
                     self.kf_t3.seed(self.HOME_T3)
                     self.is_homed = True
                     self.get_logger().info(
-                        f"✅ AUTO-HOMED — "
+                        f"[OK] AUTO-HOMED - "
                         f"T1={self.HOME_T1:.1f}  T2={self.HOME_T2:.1f}  T3={self.HOME_T3:.1f} mm"
                     )
                 return
