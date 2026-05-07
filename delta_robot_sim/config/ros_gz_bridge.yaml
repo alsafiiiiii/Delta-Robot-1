@@ -6,8 +6,6 @@
   gz_type_name: "gz.msgs.Clock"
   direction: GZ_TO_ROS
 
-
-
 # Pose/TF with frame ID remapping to remove model prefix
 - ros_topic_name: "/tf"
   gz_topic_name: "/model/delta_robot/pose"
@@ -29,36 +27,3 @@
   gz_type_name: "gz.msgs.Float"
   direction: GZ_TO_ROS
 
-# Suction Activation
-- ros_topic_name: "/suction/command"  
-  gz_topic_name: "/suction/enable"
-  ros_type_name: "std_msgs/msg/Bool"
-  gz_type_name: "gz.msgs.Boolean"
-  direction: ROS_TO_GZ
-
-# Camera
-- ros_topic_name: "/camera/image_raw"
-  gz_topic_name: "/camera/image_raw"
-  ros_type_name: "sensor_msgs/msg/Image"
-  gz_type_name: "gz.msgs.Image"
-  direction: GZ_TO_ROS
-
-- ros_topic_name: "/camera1/image_raw"
-  gz_topic_name: "/camera1/image_raw"
-  ros_type_name: "sensor_msgs/msg/Image"
-  gz_type_name: "gz.msgs.Image"
-  direction: GZ_TO_ROS
-
-# Conveyor Belt Velocity Control
-- ros_topic_name: "/conveyor/cmd_vel"
-  gz_topic_name: "/model/conveyor_belt/link/belt_link/track_cmd_vel"
-  ros_type_name: "std_msgs/msg/Float64"
-  gz_type_name: "gz.msgs.Double"
-  direction: ROS_TO_GZ
-
-# Landing Pad Touch Detection
-- ros_topic_name: "/landing_pad/touched"
-  gz_topic_name: "/landing_pad/touched"
-  ros_type_name: "std_msgs/msg/Bool"
-  gz_type_name: "gz.msgs.Boolean"
-  direction: GZ_TO_ROS
