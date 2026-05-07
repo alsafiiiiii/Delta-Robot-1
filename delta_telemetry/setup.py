@@ -24,6 +24,9 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            'plotter3d = delta_telemetry.plotter3d:main',
+            'tf_error_plotter = delta_telemetry.tf_error_plotter:main',
+            'joint_state_fk_broadcaster = delta_telemetry.joint_state_fk_broadcaster:main',
         ],
     },
 )

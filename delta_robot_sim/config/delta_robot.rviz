@@ -8,7 +8,7 @@ Panels:
         - /TF1
         - /TF1/Frames1
       Splitter Ratio: 0.5
-    Tree Height: 460
+    Tree Height: 607
   - Class: rviz_common/Views
     Expanded:
       - /Current View1
@@ -58,47 +58,71 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        bevel_pinion_1:
+        bicep_1:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        bevel_pinion_2:
+        bicep_2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        bicep1:
+        bicep_3:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        bicep2:
+        cube:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        bicep3:
+        delta_base:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        delta_base-v1:
+        differential_servo_1:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        differentialT:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        differential_c_arm:
+        differential_servo_2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
         end_effector:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        end_effector_base_plate:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        end_effector_pin:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        end_effector_pinion_1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        end_effector_pinion_2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        end_effector_side_plate_1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        end_effector_side_plate_2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -134,6 +158,11 @@ Visualization Manager:
           Show Trail: false
           Value: true
         frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        middle_shaft:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -178,7 +207,7 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        rod_cap_10_1:
+        rod_cap_10_aux:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -192,7 +221,7 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        rod_cap_12_1:
+        rod_cap_12_aux:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -231,7 +260,7 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        rod_cap_8_1:
+        rod_cap_8_aux:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -300,6 +329,20 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        sts_circular_horn_1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sts_circular_horn_2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        virtual_middle_shaft:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         virtual_pivot_1:
           Alpha: 1
           Show Axes: false
@@ -333,25 +376,41 @@ Visualization Manager:
         All Enabled: false
         delta_robot:
           Value: false
+        delta_robot/actual_fk_end_effector_pin:
+          Value: true
         delta_robot/bevel_gear_ee:
           Value: false
-        delta_robot/bevel_pinion_1:
-          Value: false
-        delta_robot/bevel_pinion_2:
-          Value: false
-        delta_robot/bicep1:
-          Value: false
-        delta_robot/bicep2:
-          Value: false
-        delta_robot/bicep3:
-          Value: false
-        delta_robot/delta_base-v1:
-          Value: false
-        delta_robot/differentialT:
-          Value: false
-        delta_robot/differential_c_arm:
-          Value: false
+        delta_robot/bicep_1:
+          Value: true
+        delta_robot/bicep_2:
+          Value: true
+        delta_robot/bicep_3:
+          Value: true
+        delta_robot/calculated_fk_end_effector_pin:
+          Value: true
+        delta_robot/commanded_end_effector_pin:
+          Value: true
+        delta_robot/cube:
+          Value: true
+        delta_robot/delta_base:
+          Value: true
+        delta_robot/differential_servo_1:
+          Value: true
+        delta_robot/differential_servo_2:
+          Value: true
         delta_robot/end_effector:
+          Value: true
+        delta_robot/end_effector_base_plate:
+          Value: true
+        delta_robot/end_effector_pin:
+          Value: true
+        delta_robot/end_effector_pinion_1:
+          Value: true
+        delta_robot/end_effector_pinion_2:
+          Value: true
+        delta_robot/end_effector_side_plate_1:
+          Value: true
+        delta_robot/end_effector_side_plate_2:
           Value: true
         delta_robot/forearm_1:
           Value: false
@@ -367,6 +426,8 @@ Visualization Manager:
           Value: false
         delta_robot/frame:
           Value: false
+        delta_robot/middle_shaft:
+          Value: true
         delta_robot/pivot_arm_1:
           Value: false
         delta_robot/pivot_arm_2:
@@ -383,14 +444,14 @@ Visualization Manager:
           Value: false
         delta_robot/rod_cap_10:
           Value: false
-        delta_robot/rod_cap_10_1:
-          Value: false
+        delta_robot/rod_cap_10_aux:
+          Value: true
         delta_robot/rod_cap_11:
           Value: false
         delta_robot/rod_cap_12:
           Value: false
-        delta_robot/rod_cap_12_1:
-          Value: false
+        delta_robot/rod_cap_12_aux:
+          Value: true
         delta_robot/rod_cap_2:
           Value: false
         delta_robot/rod_cap_3:
@@ -405,8 +466,8 @@ Visualization Manager:
           Value: false
         delta_robot/rod_cap_8:
           Value: false
-        delta_robot/rod_cap_8_1:
-          Value: false
+        delta_robot/rod_cap_8_aux:
+          Value: true
         delta_robot/rod_cap_9:
           Value: false
         delta_robot/servo_1:
@@ -433,6 +494,12 @@ Visualization Manager:
           Value: false
         delta_robot/servo_mount_3:
           Value: false
+        delta_robot/sts_circular_horn_1:
+          Value: true
+        delta_robot/sts_circular_horn_2:
+          Value: true
+        delta_robot/virtual_middle_shaft:
+          Value: true
         delta_robot/virtual_pivot_1:
           Value: false
         delta_robot/virtual_pivot_2:
@@ -450,23 +517,33 @@ Visualization Manager:
         delta_robot:
           delta_robot/bevel_gear_ee:
             {}
-          delta_robot/bevel_pinion_1:
+          delta_robot/bicep_1:
             {}
-          delta_robot/bevel_pinion_2:
+          delta_robot/bicep_2:
             {}
-          delta_robot/bicep1:
+          delta_robot/bicep_3:
             {}
-          delta_robot/bicep2:
+          delta_robot/cube:
             {}
-          delta_robot/bicep3:
+          delta_robot/delta_base:
             {}
-          delta_robot/delta_base-v1:
+          delta_robot/differential_servo_1:
             {}
-          delta_robot/differentialT:
-            {}
-          delta_robot/differential_c_arm:
+          delta_robot/differential_servo_2:
             {}
           delta_robot/end_effector:
+            {}
+          delta_robot/end_effector_base_plate:
+            {}
+          delta_robot/end_effector_pin:
+            {}
+          delta_robot/end_effector_pinion_1:
+            {}
+          delta_robot/end_effector_pinion_2:
+            {}
+          delta_robot/end_effector_side_plate_1:
+            {}
+          delta_robot/end_effector_side_plate_2:
             {}
           delta_robot/forearm_1:
             {}
@@ -481,6 +558,8 @@ Visualization Manager:
           delta_robot/forearm_6:
             {}
           delta_robot/frame:
+            {}
+          delta_robot/middle_shaft:
             {}
           delta_robot/pivot_arm_1:
             {}
@@ -498,13 +577,13 @@ Visualization Manager:
             {}
           delta_robot/rod_cap_10:
             {}
-          delta_robot/rod_cap_10_1:
+          delta_robot/rod_cap_10_aux:
             {}
           delta_robot/rod_cap_11:
             {}
           delta_robot/rod_cap_12:
             {}
-          delta_robot/rod_cap_12_1:
+          delta_robot/rod_cap_12_aux:
             {}
           delta_robot/rod_cap_2:
             {}
@@ -520,7 +599,7 @@ Visualization Manager:
             {}
           delta_robot/rod_cap_8:
             {}
-          delta_robot/rod_cap_8_1:
+          delta_robot/rod_cap_8_aux:
             {}
           delta_robot/rod_cap_9:
             {}
@@ -548,6 +627,12 @@ Visualization Manager:
             {}
           delta_robot/servo_mount_3:
             {}
+          delta_robot/sts_circular_horn_1:
+            {}
+          delta_robot/sts_circular_horn_2:
+            {}
+          delta_robot/virtual_middle_shaft:
+            {}
           delta_robot/virtual_pivot_1:
             {}
           delta_robot/virtual_pivot_2:
@@ -562,7 +647,9 @@ Visualization Manager:
       Enabled: true
       Name: Marker
       Namespaces:
-        {}
+        ee_trajectory_actual_fk: true
+        ee_trajectory_commanded: true
+        ee_trajectory_sim: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -574,7 +661,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: delta_robot
+    Fixed Frame: delta_robot/frame
     Frame Rate: 60
   Name: root
   Tools:
@@ -592,25 +679,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 0.6209439635276794
+      Distance: 1.349282145500183
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.00701121985912323
-        Y: -0.0009366243612021208
-        Z: -0.12125783413648605
+        X: -0.11100509017705917
+        Y: 0.03461398929357529
+        Z: -0.26283934712409973
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.315398246049881
+      Pitch: 0.5053983330726624
       Target Frame: delta_robot
       Value: Orbit (rviz)
-      Yaw: 0.2603752017021179
+      Yaw: 1.3153740167617798
     Saved: ~
 Window Geometry:
   Displays:
@@ -618,7 +705,7 @@ Window Geometry:
   Height: 1168
   Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd0000000100000000000002f900000432fc0200000002fb000000100044006900730070006c006100790073010000003f00000252000000cc00fffffffb0000000a005600690065007700730100000297000001da000000a900ffffff000004810000043200000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000100000000000002f900000432fc0200000002fb000000100044006900730070006c006100790073010000003f000002e5000000cc00fffffffb0000000a00560069006500770073010000032a00000147000000a900ffffff000004810000043200000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Views:
     collapsed: false
   Width: 1920

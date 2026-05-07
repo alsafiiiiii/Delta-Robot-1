@@ -4,9 +4,7 @@
 import os
 import sys
 import math
-import threading
 import time
-import json
 from dataclasses import dataclass
 
 import rclpy
@@ -218,77 +216,33 @@ class DeltaGuiNode(Node):
         self.torque_command_publisher = self.create_publisher(
             UInt8MultiArray, self.torque_command_topic, 10
         )
-        self.motor_feedback_subscription = self.create_subscription(
-            JointState,
-            self.joint_state_topic,
-            self._recording_joint_state_callback,
-            10,
-        )
         self.hardware_feedback_subscription = self.create_subscription(
             JointState,
             self.hardware_joint_state_topic,
             self._hardware_joint_state_callback,
             10,
         )
+        self.joint_state_subscription = self.create_subscription(
+            JointState,
+            self.joint_state_topic,
+            self._joint_state_callback,
+            10,
+        )
 
-        # Recording mode state
-        self.recording_enabled = False
-        self.is_recording = False
-        self.recorded_positions = []
-        self.recording_lock = threading.Lock()
-        self.latest_joint_positions = None
-        self.latest_feedback_time = None
         self.hardware_feedback_time = None
-        self.recording_gui_ref = None
-
-    def _recording_joint_state_callback(self, msg):
-        self._handle_joint_state(msg, is_hardware=False)
+        self.latest_feedback_time = None
 
     def _hardware_joint_state_callback(self, msg):
         self._handle_joint_state(msg, is_hardware=True)
 
+    def _joint_state_callback(self, msg):
+        self._handle_joint_state(msg, is_hardware=False)
+
     def _handle_joint_state(self, msg, is_hardware: bool):
-        name_to_index = {name: idx for idx, name in enumerate(msg.name)}
-        positions = []
-        for name in self.joint_names:
-            idx = name_to_index.get(name)
-            if idx is None or idx >= len(msg.position):
-                positions.append(None)
-            else:
-                positions.append(float(msg.position[idx]))
-
-        if any(pos is not None for pos in positions):
-            with self.recording_lock:
-                now = time.time()
-                if is_hardware:
-                    self.hardware_feedback_time = now
-                else:
-                    self.latest_feedback_time = now
-
-                if self._should_use_feedback(is_hardware):
-                    self.latest_joint_positions = positions
-                    self.latest_feedback_time = now
-                    if self.is_recording:
-                        radians = [pos if pos is not None else 0.0 for pos in positions]
-                        tick_positions = [
-                            int((val * RAD_TO_TICKS) + UP_POS) for val in radians
-                        ]
-                        self.recorded_positions.append(
-                            {
-                                "timestamp": time.time(),
-                                "radians": radians,
-                                "ticks": tick_positions,
-                            }
-                        )
-
-    def _should_use_feedback(self, is_hardware: bool) -> bool:
-        if not self.auto_hardware_detect:
-            return not is_hardware
+        self.latest_feedback_time = time.time()
         if is_hardware:
-            return True
-        if self.hardware_feedback_time is None:
-            return True
-        return (time.time() - self.hardware_feedback_time) > 1.0
+            self.hardware_feedback_time = self.latest_feedback_time
+
 
     def hardware_available(self) -> bool:
         if not self.auto_hardware_detect:
@@ -581,7 +535,6 @@ class DeltaRobotGui(QMainWindow):
         self.tabs.addTab(self.settings_tab, "Settings") # ADDED HERE
         self.tabs.addTab(self.gcode_tab, "G-code")
         self.tabs.addTab(self.json_tab, "JSON Tasks")
-        self.tabs.addTab(self._build_recording_tab(), "Recording")
         self.tabs.addTab(self._build_console_tab(), "Console")
         
         self.gcode_tab.setEnabled(False)
@@ -1014,434 +967,6 @@ class DeltaRobotGui(QMainWindow):
         layout.addItem(QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Expanding))
         return tab
 
-    def _build_recording_tab(self) -> QWidget:
-        """Build the recording mode tab for passive demo recording and playback."""
-        tab = QWidget()
-        layout = QVBoxLayout(tab)
-        layout.setContentsMargins(12, 12, 12, 12)
-        layout.setSpacing(14)
-
-        description = QLabel(
-            "Record motor positions by moving the robot with torque off, then playback."
-        )
-        description.setObjectName("hintLabel")
-        description.setStyleSheet("padding: 8px 6px; color: #9aa9b9; font-size: 12px;")
-        layout.addWidget(description)
-
-        # Torque control box
-        torque_box = QGroupBox("Torque Control")
-        torque_box.setObjectName("cardBox")
-        torque_layout = QHBoxLayout(torque_box)
-        torque_layout.setContentsMargins(14, 20, 14, 14)
-        torque_layout.setSpacing(10)
-
-        self.torque_off_button = QPushButton("Torque OFF (Record Mode)")
-        self.torque_off_button.setObjectName("primaryButton")
-        self.torque_off_button.setMinimumHeight(40)
-        self.torque_off_button.clicked.connect(self._on_torque_off_clicked)
-
-        self.torque_on_button = QPushButton("Torque ON (Normal Mode)")
-        self.torque_on_button.setObjectName("secondaryButton")
-        self.torque_on_button.setMinimumHeight(40)
-        self.torque_on_button.clicked.connect(self._on_torque_on_clicked)
-
-        torque_layout.addWidget(self.torque_off_button)
-        torque_layout.addWidget(self.torque_on_button)
-        torque_layout.addStretch(1)
-        layout.addWidget(torque_box)
-
-        # Recording control box
-        record_box = QGroupBox("Recording")
-        record_box.setObjectName("cardBox")
-        record_layout = QVBoxLayout(record_box)
-        record_layout.setContentsMargins(14, 20, 14, 14)
-        record_layout.setSpacing(10)
-
-        control_row = QHBoxLayout()
-        control_row.setSpacing(10)
-
-        self.record_button = QPushButton("Start Recording")
-        self.record_button.setObjectName("primaryButton")
-        self.record_button.setMinimumHeight(40)
-        self.record_button.setEnabled(False)
-        self.record_button.clicked.connect(self._on_record_clicked)
-
-        self.stop_record_button = QPushButton("Stop Recording")
-        self.stop_record_button.setObjectName("secondaryButton")
-        self.stop_record_button.setMinimumHeight(40)
-        self.stop_record_button.setEnabled(False)
-        self.stop_record_button.clicked.connect(self._on_stop_record_clicked)
-
-        self.clear_recording_button = QPushButton("Clear Recording")
-        self.clear_recording_button.setObjectName("secondaryButton")
-        self.clear_recording_button.setMinimumHeight(40)
-        self.clear_recording_button.clicked.connect(self._on_clear_recording_clicked)
-
-        control_row.addWidget(self.record_button)
-        control_row.addWidget(self.stop_record_button)
-        control_row.addWidget(self.clear_recording_button)
-        control_row.addStretch(1)
-        record_layout.addLayout(control_row)
-
-        # Recording status
-        status_row = QHBoxLayout()
-        status_row.setSpacing(10)
-        status_row.addWidget(QLabel("Recording Status:"))
-        self.recording_status_label = QLabel("Idle")
-        self.recording_status_label.setStyleSheet("font-weight: 600; color: #7a8fa3;")
-        status_row.addWidget(self.recording_status_label)
-        status_row.addStretch(1)
-        record_layout.addLayout(status_row)
-
-        layout.addWidget(record_box)
-
-        # Display mode box
-        display_box = QGroupBox("Display Mode")
-        display_box.setObjectName("cardBox")
-        display_layout = QHBoxLayout(display_box)
-        display_layout.setContentsMargins(14, 20, 14, 14)
-        display_layout.setSpacing(10)
-
-        display_layout.addWidget(QLabel("Show recorded positions as:"))
-        self.display_mode_combo = QComboBox()
-        self.display_mode_combo.addItems(
-            ["Motor Ticks (Raw)", "Joint Angles (Radians)"]
-        )
-        self.display_mode_combo.setMinimumHeight(36)
-        self.display_mode_combo.setMaximumWidth(220)
-        self.display_mode_combo.currentTextChanged.connect(
-            self._on_display_mode_changed
-        )
-        display_layout.addWidget(self.display_mode_combo)
-        display_layout.addStretch(1)
-        layout.addWidget(display_box)
-
-        # Recorded data display
-        data_box = QGroupBox("Recorded Data")
-        data_box.setObjectName("cardBox")
-        data_layout = QVBoxLayout(data_box)
-        data_layout.setContentsMargins(14, 20, 14, 14)
-        data_layout.setSpacing(10)
-
-        self.recording_data_list = QPlainTextEdit()
-        self.recording_data_list.setReadOnly(True)
-        self.recording_data_list.setMaximumHeight(200)
-        self.recording_data_list.setStyleSheet(
-            "background-color: #1e1e1e; color: #d4d4d4; font-family: monospace; font-size: 9px;"
-        )
-        data_layout.addWidget(self.recording_data_list)
-
-        layout.addWidget(data_box)
-
-        # Playback control box
-        playback_box = QGroupBox("Playback")
-        playback_box.setObjectName("cardBox")
-        playback_layout = QVBoxLayout(playback_box)
-        playback_layout.setContentsMargins(14, 20, 14, 14)
-        playback_layout.setSpacing(10)
-
-        playback_control_row = QHBoxLayout()
-        playback_control_row.setSpacing(10)
-
-        self.playback_button = QPushButton("Play Recorded Trajectory")
-        self.playback_button.setObjectName("primaryButton")
-        self.playback_button.setMinimumHeight(40)
-        self.playback_button.setEnabled(False)
-        self.playback_button.clicked.connect(self._on_playback_clicked)
-
-        playback_control_row.addWidget(self.playback_button)
-        playback_control_row.addStretch(1)
-        playback_layout.addLayout(playback_control_row)
-
-        # Playback speed control
-        speed_row = QHBoxLayout()
-        speed_row.setSpacing(10)
-        speed_row.addWidget(QLabel("Playback speed (ms between points):"))
-        self.playback_speed_spinbox = QSpinBox()
-        self.playback_speed_spinbox.setMinimum(10)
-        self.playback_speed_spinbox.setMaximum(10000)
-        self.playback_speed_spinbox.setValue(50)
-        self.playback_speed_spinbox.setMaximumWidth(100)
-        speed_row.addWidget(self.playback_speed_spinbox)
-        # Playback smoothing control (EMA alpha 0..1)
-        speed_row.addWidget(QLabel("Smoothing α (0.00-1.00):"))
-        self.playback_smoothing_spinbox = QDoubleSpinBox()
-        self.playback_smoothing_spinbox.setDecimals(2)
-        self.playback_smoothing_spinbox.setRange(0.0, 1.0)
-        self.playback_smoothing_spinbox.setSingleStep(0.05)
-        self.playback_smoothing_spinbox.setValue(0.6)
-        self.playback_smoothing_spinbox.setMaximumWidth(100)
-        speed_row.addWidget(self.playback_smoothing_spinbox)
-        speed_row.addStretch(1)
-        playback_layout.addLayout(speed_row)
-
-        # Save/Load buttons
-        file_row = QHBoxLayout()
-        file_row.setSpacing(10)
-
-        self.save_recording_button = QPushButton("Save to File")
-        self.save_recording_button.setObjectName("secondaryButton")
-        self.save_recording_button.setMinimumHeight(36)
-        self.save_recording_button.setEnabled(False)
-        self.save_recording_button.clicked.connect(self._on_save_recording_clicked)
-
-        self.load_recording_button = QPushButton("Load from File")
-        self.load_recording_button.setObjectName("secondaryButton")
-        self.load_recording_button.setMinimumHeight(36)
-        self.load_recording_button.clicked.connect(self._on_load_recording_clicked)
-
-        file_row.addWidget(self.save_recording_button)
-        file_row.addWidget(self.load_recording_button)
-        file_row.addStretch(1)
-        playback_layout.addLayout(file_row)
-
-        layout.addWidget(playback_box)
-        layout.addItem(QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Expanding))
-        return tab
-
-    def _on_torque_off_clicked(self):
-        """Turn torque off for all motors (passive mode)."""
-        commands_sent = []
-        try:
-            for motor_id in self.node.motor_ids:
-                cmd_result = self.node.send_torque_command(motor_id, 0)
-                if cmd_result:
-                    commands_sent.append(f"Motor {motor_id}: OFF")
-                time.sleep(0.1)  # Small delay between commands
-        except Exception as e:
-            QMessageBox.warning(
-                self, "Error", f"Failed to send torque commands: {str(e)}"
-            )
-            return
-
-        self.node.recording_enabled = True
-        self.torque_off_button.setEnabled(False)
-        self.torque_on_button.setEnabled(True)
-        self.record_button.setEnabled(True)
-
-        msg_text = (
-            "All motors are now in passive mode (torque OFF).\nYou can manually move the robot to record positions.\n\n"
-            + "\n".join(commands_sent)
-        )
-        QMessageBox.information(self, "Torque OFF", msg_text)
-
-    def _on_torque_on_clicked(self):
-        """Turn torque on for all motors (normal mode)."""
-        commands_sent = []
-        try:
-            for motor_id in self.node.motor_ids:
-                cmd_result = self.node.send_torque_command(motor_id, 1)
-                if cmd_result:
-                    commands_sent.append(f"Motor {motor_id}: ON")
-                time.sleep(0.1)  # Small delay between commands
-        except Exception as e:
-            QMessageBox.warning(
-                self, "Error", f"Failed to send torque commands: {str(e)}"
-            )
-            return
-
-        self.node.recording_enabled = False
-        self.node.is_recording = False
-        self.torque_off_button.setEnabled(True)
-        self.torque_on_button.setEnabled(False)
-        self.record_button.setEnabled(False)
-        self.stop_record_button.setEnabled(False)
-        self.recording_status_label.setText("Idle - Torque ON")
-        self.recording_status_label.setStyleSheet("font-weight: 600; color: #7a8fa3;")
-
-        msg_text = "All motors are now in normal mode (torque ON).\n\n" + "\n".join(
-            commands_sent
-        )
-        QMessageBox.information(self, "Torque ON", msg_text)
-
-    def _on_record_clicked(self):
-        """Start recording motor positions."""
-        if not self.node.recording_enabled:
-            QMessageBox.warning(
-                self, "Error", "Turn torque OFF first to enable recording mode."
-            )
-            return
-
-        self.node.is_recording = True
-        self.node.recorded_positions = []
-        self.record_button.setEnabled(False)
-        self.stop_record_button.setEnabled(True)
-        self.torque_off_button.setEnabled(False)
-        self.recording_status_label.setText("RECORDING...")
-        self.recording_status_label.setStyleSheet("font-weight: 600; color: #ff6b6b;")
-        self.recording_data_list.clear()
-        self.recording_data_list.appendPlainText("Recording started...")
-
-    def _on_stop_record_clicked(self):
-        """Stop recording motor positions."""
-        self.node.is_recording = False
-        self.record_button.setEnabled(True)
-        self.stop_record_button.setEnabled(False)
-        self.torque_off_button.setEnabled(True)
-        self.recording_status_label.setText(
-            f"Stopped - {len(self.node.recorded_positions)} points recorded"
-        )
-        self.recording_status_label.setStyleSheet("font-weight: 600; color: #51cf66;")
-        self.save_recording_button.setEnabled(len(self.node.recorded_positions) > 0)
-        self.playback_button.setEnabled(len(self.node.recorded_positions) > 0)
-        self._update_recording_display()
-
-    def _on_clear_recording_clicked(self):
-        """Clear the recorded positions."""
-        self.node.recorded_positions = []
-        self.recording_status_label.setText("Cleared")
-        self.recording_status_label.setStyleSheet("font-weight: 600; color: #7a8fa3;")
-        self.recording_data_list.clear()
-        self.save_recording_button.setEnabled(False)
-        self.playback_button.setEnabled(False)
-
-    def _on_display_mode_changed(self):
-        """Update recording display when display mode changes."""
-        self._update_recording_display()
-
-    def _update_recording_display(self):
-        """Update the recording data display."""
-        self.recording_data_list.clear()
-        if not self.node.recorded_positions:
-            return
-
-        is_radians = self.display_mode_combo.currentIndex() == 1
-        for i, record in enumerate(self.node.recorded_positions):
-            if is_radians:
-                angles = record["radians"]
-                parts = []
-                for idx, name in enumerate(self.node.joint_names):
-                    if idx >= len(angles):
-                        break
-                    parts.append(f"{name}={angles[idx]:+.4f}")
-                line = f"[{i:3d}] " + " ".join(parts)
-            else:
-                ticks = record["ticks"]
-                parts = []
-                for idx, _name in enumerate(self.node.joint_names):
-                    if idx >= len(ticks):
-                        break
-                    parts.append(f"T{idx + 1}={ticks[idx]:4d}")
-                line = f"[{i:3d}] " + " ".join(parts)
-            self.recording_data_list.appendPlainText(line)
-
-    def _on_playback_clicked(self):
-        """Playback the recorded trajectory."""
-        if not self.node.recorded_positions:
-            QMessageBox.warning(self, "Error", "No recording to playback.")
-            return
-
-        if not self.node.recording_enabled:
-            QMessageBox.warning(
-                self, "Error", "Turn torque OFF first (to unlock motors for playback)."
-            )
-            return
-
-        speed_ms = self.playback_speed_spinbox.value()
-        smoothing_alpha = float(self.playback_smoothing_spinbox.value()) if hasattr(self, 'playback_smoothing_spinbox') else 0.0
-        thread = threading.Thread(target=self._playback_thread, args=(speed_ms, smoothing_alpha))
-        thread.daemon = True
-        thread.start()
-
-    def _playback_thread(self, speed_ms, smoothing_alpha=0.0):
-        """Playback recorded trajectory in a separate thread with spline interpolation for smooth motion.
-        Applies an exponential moving average (EMA) to the interpolated joint values for smoother playback.
-        Qt-safe."""
-        import numpy as np
-        from scipy.interpolate import CubicSpline
-        # Disable button in main thread
-        QTimer.singleShot(0, lambda: self.playback_button.setEnabled(False))
-        try:
-            positions = self.node.recorded_positions
-            if len(positions) < 2:
-                return
-            t = np.arange(len(positions))
-            thetas = np.array([rec["radians"] for rec in positions])  # shape: (N, 5)
-            n_interp = 10  # number of interpolated points between each pair
-            t_interp = np.linspace(
-                0, len(positions) - 1, num=(len(positions) - 1) * n_interp + 1
-            )
-            splines = [CubicSpline(t, thetas[:, i]) for i in range(5)]
-            theta_interp = np.stack([spl(t_interp) for spl in splines], axis=1)
-
-            # EMA smoothing state (start at first interpolated sample)
-            ema = np.array(theta_interp[0], dtype=float)
-            alpha = float(smoothing_alpha)
-            if alpha < 0.0:
-                alpha = 0.0
-            if alpha > 1.0:
-                alpha = 1.0
-
-            for joint_vals in theta_interp:
-                arr = np.array(joint_vals, dtype=float)
-                if alpha > 0.0:
-                    smoothed = alpha * arr + (1.0 - alpha) * ema
-                else:
-                    smoothed = arr
-                ema = smoothed
-
-                self.node.publish_joint_positions(
-                    smoothed.tolist(),
-                    duration_s=(speed_ms / n_interp) / 1000.0,
-                )
-                time.sleep((speed_ms / n_interp) / 1000.0)
-        finally:
-            # Re-enable button in main thread
-            QTimer.singleShot(0, lambda: self.playback_button.setEnabled(True))
-
-    def _on_save_recording_clicked(self):
-        """Save recorded trajectory to a JSON file."""
-        if not self.node.recorded_positions:
-            QMessageBox.warning(self, "Error", "No recording to save.")
-            return
-
-        filepath, _ = QFileDialog.getSaveFileName(
-            self, "Save Recording", "", "JSON Files (*.json)"
-        )
-        if not filepath:
-            return
-
-        try:
-            data = {
-                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-                "num_points": len(self.node.recorded_positions),
-                "points": self.node.recorded_positions,
-            }
-            with open(filepath, "w") as f:
-                json.dump(data, f, indent=2)
-            QMessageBox.information(self, "Saved", f"Recording saved to:\n{filepath}")
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to save:\n{str(e)}")
-
-    def _on_load_recording_clicked(self):
-        """Load recorded trajectory from a JSON file."""
-        filepath, _ = QFileDialog.getOpenFileName(
-            self, "Load Recording", "", "JSON Files (*.json)"
-        )
-        if not filepath:
-            return
-
-        try:
-            with open(filepath, "r") as f:
-                data = json.load(f)
-
-            self.node.recorded_positions = data["points"]
-            self.recording_status_label.setText(
-                f"Loaded - {len(self.node.recorded_positions)} points"
-            )
-            self.recording_status_label.setStyleSheet(
-                "font-weight: 600; color: #51cf66;"
-            )
-            self.save_recording_button.setEnabled(True)
-            self.playback_button.setEnabled(True)
-            self._update_recording_display()
-            QMessageBox.information(
-                self,
-                "Loaded",
-                f"Loaded {len(self.node.recorded_positions)} recorded points.",
-            )
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to load:\n{str(e)}")
 
     def _build_console_tab(self) -> QWidget:
         tab = QWidget()

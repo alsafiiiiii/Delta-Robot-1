@@ -159,6 +159,30 @@ def generate_launch_description():
         output="screen",
     )
 
+    # --- 8. Extended Visualization ---
+    plotter3d = Node(
+        package="delta_telemetry",
+        executable="plotter3d",
+        name="delta_ee_plotter",
+        output="screen",
+        parameters=[
+            {
+                "marker_frame": "delta_robot/world_link",
+                "sim_child_frame": "delta_robot/end_effector_pin",
+                "commanded_child_frame": "delta_robot/commanded_end_effector_pin",
+                "calculated_fk_child_frame": "delta_robot/calculated_fk_end_effector_pin",
+                "actual_fk_child_frame": "delta_robot/actual_fk_end_effector_pin",
+            }
+        ],
+    )
+
+    fk_broadcaster = Node(
+        package="delta_telemetry",
+        executable="joint_state_fk_broadcaster",
+        name="joint_state_fk_broadcaster",
+        output="screen",
+    )
+
     return LaunchDescription(
         [
             use_sim_feedback_arg,
@@ -171,5 +195,7 @@ def generate_launch_description():
             rviz2,
             load_joint_state_broadcaster,
             load_joint_trajectory_controller,
+            plotter3d,
+            fk_broadcaster,
         ]
     )

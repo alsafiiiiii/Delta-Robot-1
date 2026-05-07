@@ -1,0 +1,33 @@
+[
+  {
+    "action": "move",
+    "x": -0.0,
+    "y": 0.0,
+    "z": -0.30,
+    "duration": 1.0
+  },{
+    "action": "move",
+    "x": 0.05,
+    "y": 0.0,
+    "z": -0.40,
+    "duration": 1.0
+  },
+  {
+    "action": "wait",
+    "seconds": 1.0
+  },
+  {
+    "action": "move",
+    "x": -0.05,
+    "y": 0.0,
+    "z": -0.40,
+    "duration": 1.0
+  },
+  {
+    "action": "move",
+    "x": -0.0,
+    "y": 0.0,
+    "z": -0.30,
+    "duration": 1.0
+  }
+]

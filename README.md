@@ -51,7 +51,7 @@ To control the physical robot:
    Ensure your motor driver (ESP32) is connected via USB.
    ```bash
    # You may need to grant permissions to the serial port
-   sudo chmod 666 /dev/ttyUSB0
+   sudo chmod 666 /dev/ttyACM0
    
    # Run the motor control node
    ros2 run delta_hardware_bridge motor_control_node

@@ -1,0 +1,16 @@
+; Delta Robot Square Test
+; A = Tilt (X-axis), C = Spin (Z-axis)
+
+G1 X0.0 Y0.0 Z-0.10 F200
+
+G1 X0.05 Y0.05 Z-0.235
+
+G1 X0.05 Y-0.05 Z-0.235
+
+G1 X-0.05 Y-0.05 Z-0.235
+
+G1 X-0.05 Y0.05 Z-0.235
+
+G1 X0.05 Y0.05 Z-0.235
+ 
+G1 X0.0 Y0.0 Z-0.235
