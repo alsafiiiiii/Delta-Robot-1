@@ -28,40 +28,36 @@ source install/setup.bash
 
 ## Running the Robot
 
-### 1. Simulation Mode (Gazebo)
-To run the robot in a virtual environment:
+To operate the Delta Robot, follow these steps in order:
 
-1. **Launch Simulation & Controllers:**
-   ```bash
-   ros2 launch delta_robot_sim delta_robot_spawn.launch.py
-   ```
-   This will start Gazebo, spawn the robot, and load the joint controllers.
+### Step 1: Launch the Backend
+Choose either the simulation environment or the real hardware bridge:
 
-2. **Launch the Control GUI:**
-   ```bash
-   ros2 launch delta_robot_gui delta_robot_gui.launch.py sim_mode:=true
-   ```
+**Option A: Simulation (Gazebo)**
+```bash
+ros2 launch delta_robot_sim delta_robot_spawn.launch.py
+```
 
----
+**Option B: Real Hardware**
+```bash
+# Grant permissions to the serial port
+sudo chmod 666 /dev/ttyACM0
 
-### 2. Real Hardware Mode
-To control the physical robot:
+# Run the motor control node
+ros2 run delta_hardware_bridge motor_control_node
+```
 
-1. **Start the Hardware Bridge:**
-   Ensure your motor driver (ESP32) is connected via USB.
-   ```bash
-   # You may need to grant permissions to the serial port
-   sudo chmod 666 /dev/ttyACM0
-   
-   # Run the motor control node
-   ros2 run delta_hardware_bridge motor_control_node
-   ```
-   *(Note: Ensure the `motor_control_node` is correctly mapped in `setup.py` or run directly via `python3 src/delta_hardware_bridge/delta_hardware_bridge/motor_control_node.py`)*
+### Step 2: Start the 5-DOF Controller
+This node handles the inverse kinematics and translates Cartesian coordinates into motor joint commands.
+```bash
+ros2 run delta_controllers 5dof_controller_node
+```
 
-2. **Launch the Control GUI:**
-   ```bash
-   ros2 launch delta_robot_gui delta_robot_gui.launch.py sim_mode:=false
-   ```
+### Step 3: Start the Control GUI
+Launch the PyQt5 interface to send manual slider commands, run automated tasks, or execute G-code.
+```bash
+ros2 launch delta_robot_gui delta_robot_gui.launch.py
+```
 
 ---
 

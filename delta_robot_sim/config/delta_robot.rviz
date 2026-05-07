@@ -5,7 +5,6 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
-        - /TF1
         - /TF1/Frames1
       Splitter Ratio: 0.5
     Tree Height: 607
@@ -648,7 +647,9 @@ Visualization Manager:
       Name: Marker
       Namespaces:
         ee_trajectory_actual_fk: true
+        ee_trajectory_calculated_fk: true
         ee_trajectory_commanded: true
+        ee_trajectory_sensor: true
         ee_trajectory_sim: true
       Topic:
         Depth: 5
@@ -679,25 +680,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 1.349282145500183
+      Distance: 1.0448840856552124
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.11100509017705917
-        Y: 0.03461398929357529
-        Z: -0.26283934712409973
+        X: -0.015766948461532593
+        Y: 0.0250509362667799
+        Z: -0.21390317380428314
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5053983330726624
+      Pitch: 0.15039853751659393
       Target Frame: delta_robot
       Value: Orbit (rviz)
-      Yaw: 1.3153740167617798
+      Yaw: 1.5753737688064575
     Saved: ~
 Window Geometry:
   Displays:

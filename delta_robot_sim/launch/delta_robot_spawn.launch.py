@@ -13,6 +13,7 @@ from launch.conditions import IfCondition
 from launch.substitutions import Command
 import xacro
 
+
 def generate_launch_description():
     # --- 1. Setup Paths ---
     delta_robot_description_path = get_package_share_directory(
@@ -40,16 +41,13 @@ def generate_launch_description():
     )
 
     # Load SDF
-    xacro_file = os.path.join(delta_robot_description_path, "models", "model_high.sdf.xacro")
+    xacro_file = os.path.join(
+        delta_robot_description_path, "models", "model_high.sdf.xacro"
+    )
 
     # Process the XACRO file right now and convert it into a standard Python string
     doc = xacro.process_file(xacro_file)
     robot_desc = doc.toxml()
-
-    # Load Box SDF
-    box_sdf_file = os.path.join(delta_robot_description_path, "models", "box.sdf")
-    with open(box_sdf_file, "r") as infp:
-        infp.read()
 
     # Pre-process SDF to replace $(find delta_robot_sim) with actual path
     # because standard SDF parser doesn't resolve $(find ...)
@@ -129,7 +127,6 @@ def generate_launch_description():
         ],
         output="screen",
     )
-
 
     # --- 6. RViz2 ---
     rviz2 = Node(
