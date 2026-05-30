@@ -647,7 +647,7 @@ class DeltaRobotGui(QMainWindow):
 
         self.x_slider = LabeledSlider(SliderSpec("X", -120, 120, 0))
         self.y_slider = LabeledSlider(SliderSpec("Y", -120, 120, 0))
-        self.z_slider = LabeledSlider(SliderSpec("Z", -450, -300, -375))
+        self.z_slider = LabeledSlider(SliderSpec("Z", -600, -300, -375))
         
         # Subtle visual separator between Translation and Rotation
         separator = QFrame()

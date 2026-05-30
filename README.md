@@ -41,7 +41,7 @@ ros2 launch delta_robot_sim delta_robot_spawn.launch.py
 **Option B: Real Hardware**
 ```bash
 # Grant permissions to the serial port
-sudo chmod 666 /dev/ttyACM0
+sudo chmod 666 /dev/ttyUSB0
 
 # Run the motor control node
 ros2 run delta_hardware_bridge motor_control_node

@@ -38,7 +38,7 @@ class Args:
     """Servo ID on the bus."""
     baudrate: int = 115200
     """Serial baud rate."""
-    port: str = "/dev/ttyACM0"
+    port: str = "/dev/ttyUSB0"
     """Serial port path. Defaults to the stable by-id symlink for the CH340 adapter."""
     min_range: int = 50
     """Reject calibration if |CLOSED_TICK - OPEN_TICK| is below this many ticks."""

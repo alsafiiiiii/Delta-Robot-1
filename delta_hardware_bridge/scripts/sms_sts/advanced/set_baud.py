@@ -49,7 +49,7 @@ class Args:
     """Current baudrate the servo is operating at."""
     new_code: int = 0
     """New baud code: 0=1M, 1=500k, 2=250k, 3=128k, 4=115200, 5=76800, 6=57600, 7=38400."""
-    port: str = "/dev/ttyACM0"
+    port: str = "/dev/ttyUSB0"
     """Serial port path. Defaults to the stable by-id symlink for the CH340 adapter."""
 
 

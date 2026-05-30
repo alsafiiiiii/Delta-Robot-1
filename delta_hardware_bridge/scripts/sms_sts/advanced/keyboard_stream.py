@@ -49,7 +49,7 @@ class Args:
     """Servo ID on the bus."""
     baudrate: int = 115200
     """Serial baud rate."""
-    port: str = "/dev/ttyACM0"
+    port: str = "/dev/ttyUSB0"
     """Serial port path. Defaults to the stable by-id symlink for the CH340 adapter."""
     rate_hz: float = 50.0
     """Control loop rate in Hz."""

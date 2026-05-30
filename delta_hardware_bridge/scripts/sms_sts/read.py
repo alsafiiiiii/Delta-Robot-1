@@ -20,7 +20,7 @@ from scservo_sdk import *  # Uses FTServo SDK library
 # Get methods and members of PortHandlerLinux or PortHandlerWindows
 portHandler = PortHandler(
     "/dev/tty.usbmodem58FA0830591"
-)  # ex) Windows: "COM1"   Linux: "/dev/ttyACM0" Mac: "/dev/tty.usbserial-*"
+)  # ex) Windows: "COM1"   Linux: "/dev/ttyUSB0" Mac: "/dev/tty.usbserial-*"
 
 # Initialize PacketHandler instance
 # Get methods and members of Protocol

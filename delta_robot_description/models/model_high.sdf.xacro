@@ -856,47 +856,68 @@
              ROS 2 CONTROL
         ══════════════════════════════════════════════════════════ -->
         <ros2_control name="GazeboSimSystem" type="system">
-            <hardware>
-                <plugin>gz_ros2_control/GazeboSimSystem</plugin>
-            </hardware>
-            <!-- Motor joints -->
-            <joint name="motor_joint_1">
-                <command_interface name="position"/>
-                <state_interface   name="position"/>
-                <state_interface   name="velocity"/>
-            </joint>
-            <joint name="motor_joint_2">
-                <command_interface name="position"/>
-                <state_interface   name="position"/>
-                <state_interface   name="velocity"/>
-            </joint>
-            <joint name="motor_joint_3">
-                <command_interface name="position"/>
-                <state_interface   name="position"/>
-                <state_interface   name="velocity"/>
-            </joint>
-            <!-- Differential joints -->
-            <joint name="differential_pinion_joint_1">
-                <command_interface name="position"/>
-                <state_interface   name="position"/>
-                <state_interface   name="velocity"/>
-            </joint>
-            <joint name="differential_pinion_joint_2">
-                <command_interface name="position"/>
-                <state_interface   name="position"/>
-                <state_interface   name="velocity"/>
-            </joint>
-            <joint name="differential_T_joint">
-                <command_interface name="position"/>
-                <state_interface   name="position"/>
-                <state_interface   name="velocity"/>
-            </joint>
-            <joint name="differential_EE_joint">
-                <command_interface name="position"/>
-                <state_interface   name="position"/>
-                <state_interface   name="velocity"/>
-            </joint>
-        </ros2_control>
+    <hardware>
+        <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+    </hardware>
+    
+    <!-- Motor joints -->
+    <joint name="motor_joint_1">
+        <command_interface name="position"/>
+        <state_interface name="position">
+            <param name="initial_value">0.0</param>
+        </state_interface>
+        <state_interface name="velocity"/>
+    </joint>
+    
+    <joint name="motor_joint_2">
+        <command_interface name="position"/>
+        <state_interface name="position">
+            <param name="initial_value">0.0</param>
+        </state_interface>
+        <state_interface name="velocity"/>
+    </joint>
+    
+    <joint name="motor_joint_3">
+        <command_interface name="position"/>
+        <state_interface name="position">
+            <param name="initial_value">0.0</param>
+        </state_interface>
+        <state_interface name="velocity"/>
+    </joint>
+    
+    <!-- Differential joints -->
+    <joint name="differential_pinion_joint_1">
+        <command_interface name="position"/>
+        <state_interface name="position">
+            <param name="initial_value">0.0</param>
+        </state_interface>
+        <state_interface name="velocity"/>
+    </joint>
+    
+    <joint name="differential_pinion_joint_2">
+        <command_interface name="position"/>
+        <state_interface name="position">
+            <param name="initial_value">0.0</param>
+        </state_interface>
+        <state_interface name="velocity"/>
+    </joint>
+    
+    <joint name="differential_T_joint">
+        <command_interface name="position"/>
+        <state_interface name="position">
+            <param name="initial_value">0.0</param>
+        </state_interface>
+        <state_interface name="velocity"/>
+    </joint>
+    
+    <joint name="differential_EE_joint">
+        <command_interface name="position"/>
+        <state_interface name="position">
+            <param name="initial_value">0.0</param>
+        </state_interface>
+        <state_interface name="velocity"/>
+    </joint>
+</ros2_control>
         <!-- ══════════════════════════════════════════════════════════
              PLUGINS
         ══════════════════════════════════════════════════════════ -->

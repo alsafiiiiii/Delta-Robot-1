@@ -19,8 +19,8 @@ class DeltaIK:
         l_lower: Lower arm (forearm) length (Center-to-Center)
     """
     
-    def __init__(self, r_base: float = 0.100, r_ee: float = 0.0325, 
-                 l_upper: float = 0.100, l_lower: float = 0.263):
+    def __init__(self, r_base: float = 0.13001, r_ee: float = 0.061717, 
+                 l_upper: float = 0.250, l_lower: float = 0.500):
         """
         Args:
             r_base: Base radius (center to motor axis)

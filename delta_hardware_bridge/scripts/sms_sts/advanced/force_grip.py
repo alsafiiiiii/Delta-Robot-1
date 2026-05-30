@@ -63,7 +63,7 @@ class Args:
     """Servo ID on the bus."""
     baudrate: int = 115200
     """Serial baud rate."""
-    port: str = "/dev/ttyACM0"
+    port: str = "/dev/ttyUSB0"
     """Serial port path."""
     open_tick: int | None = None
     """Open position (ticks). Defaults to MIN_ANGLE_LIMIT read from servo."""

@@ -124,7 +124,7 @@ class EETfBroadcaster(Node):
         super().__init__("ee_tf_broadcaster")
         self.tf_broadcaster = TransformBroadcaster(self)
 
-        self.port_name = self.declare_parameter("port_name", "/dev/ttyACM0").value
+        self.port_name = self.declare_parameter("port_name", "/dev/ttyUSB0").value
         self.baudrate = int(self.declare_parameter("baudrate", 115200).value)
         self.update_rate_hz = float(self.declare_parameter("update_rate_hz", 200.0).value)
 

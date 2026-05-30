@@ -4,7 +4,7 @@ sys.path.append("..")
 from scservo_sdk import *
 
 # 初始化端口（保持与write.py相同配置）
-portHandler = PortHandler("/dev/ttyACM0")
+portHandler = PortHandler("/dev/ttyUSB0")
 packetHandler = sms_sts(portHandler)
 
 if portHandler.openPort():

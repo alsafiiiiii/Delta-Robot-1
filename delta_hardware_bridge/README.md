@@ -11,14 +11,14 @@ The robot uses **Serial Bus Servos** which communicate via half-duplex UART data
 
 ### Communication Specs:
 - **Baud Rate**: 921,600 baud
-- **Port**: `/dev/ttyACM0` (default)
+- **Port**: `/dev/ttyUSB0` (default)
 - **Protocol**: Custom Serial/Binary bridge (uses SET/SETN commands)
 
 ## Running the Bridge
 
 Before running, ensure you have permissions for the serial port:
 ```bash
-sudo chmod 666 /dev/ttyACM0
+sudo chmod 666 /dev/ttyUSB0
 ```
 
 Start the bridge node:
